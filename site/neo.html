@@ -1,13 +1,11 @@
 <title>NEO</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
 <style>
-/* Layout: black ground, hairline grid, centred light-weight display, one mint accent. Flat: no cards, no gradients, no glass. Single dark theme by design. */
+/* Layout: black ground, hairline grid, centred light display, one mint accent. A headline, a paragraph, two buttons, three rows. Single dark theme by design. */
 :root{
   --bg:#000;--fg:#fff;--muted:#9a9a9a;--dim:#5e5e5e;--line:rgba(255,255,255,.18);--line2:rgba(255,255,255,.34);
   --accent:#00ec97;--accent-ink:#00130c;
-  --good:#00ec97;--warn:#f0c454;--bad:#ff6b6b;
   --body:"Hanken Grotesk",system-ui,-apple-system,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   color-scheme:dark;
@@ -16,250 +14,145 @@
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-.aurora{display:none}
 h1,h2,h3{margin:0;text-wrap:balance;line-height:1.05;font-weight:300;letter-spacing:-.02em}
 h1{font-size:clamp(2.8rem,7.5vw,5.6rem);text-align:center}
-h2{font-size:clamp(1.8rem,3.6vw,2.8rem);text-align:center;text-transform:none}
-h3{font-size:1.25rem;font-weight:400;letter-spacing:-.01em}
+h2{font-size:clamp(1.8rem,3.4vw,2.6rem);text-align:center}
+h3{font-size:1.35rem;font-weight:400;letter-spacing:-.01em}
 p{margin:0}a{color:inherit}
-mark{background:none;color:var(--fg);padding:0;border-radius:0}
 .wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.band{padding-block:clamp(48px,7vw,96px);border-top:1px solid var(--line)}
-.kicker{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);text-align:center}
-.ulabel{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);text-decoration:none}
-.lede{color:var(--muted);max-width:66ch;font-size:1.02rem;line-height:1.7;text-align:center;margin:0 auto}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
-.head{display:grid;gap:16px;max-width:860px;margin:0 auto;justify-items:center}
 
-/* flat "cards": hairline cells */
-.card,.deep{background:var(--bg);border:1px solid var(--line);border-radius:0;box-shadow:none;backdrop-filter:none;position:relative;overflow:hidden;color:var(--fg)}
-.deep::after{display:none}
-.tagf{display:none}
-
-/* nav: full-width bar with vertical rules */
-.navwrap{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;padding:0;max-width:none;background:var(--bg);border-bottom:1px solid var(--line);pointer-events:auto}
-nav{display:flex;align-items:stretch;gap:0;padding:0;border-radius:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none;height:56px}
-.logo{font-weight:500;letter-spacing:.12em;font-size:1rem;display:flex;align-items:center;gap:0;padding:0 22px;border-right:1px solid var(--line)}
-.logo svg{display:none}
-nav ul{list-style:none;display:flex;gap:0;margin:0;padding:0;font-size:.9rem;color:var(--fg);flex:1}
-nav ul li{display:flex}
-nav ul a{text-decoration:none;display:flex;align-items:center;padding:0 22px;border-right:1px solid var(--line)}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:stretch;height:56px}
+.logo{font-weight:500;letter-spacing:.12em;font-size:1rem;display:flex;align-items:center;padding:0 22px;border-right:1px solid var(--line)}
+nav ul{list-style:none;display:flex;margin:0;padding:0;font-size:.9rem}
+nav ul a{text-decoration:none;display:flex;align-items:center;height:100%;padding:0 22px;border-right:1px solid var(--line)}
 nav ul a:hover,nav ul a:focus-visible{color:var(--accent)}
-.chip{font-size:.8rem;padding:0 22px;border-radius:0;background:transparent;border:0;display:inline-flex;gap:8px;align-items:center;color:var(--muted);white-space:nowrap;margin-left:auto;border-left:1px solid var(--line)}
-.chip i{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:none}
+.chip{font-size:.8rem;padding:0 22px;display:inline-flex;gap:8px;align-items:center;color:var(--muted);white-space:nowrap;margin-left:auto;border-left:1px solid var(--line)}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
 .chip b{color:var(--fg);font-weight:500}
 
-/* buttons */
-.btn{font:500 .92rem var(--body);padding:12px 20px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--fg);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:10px;box-shadow:none;backdrop-filter:none}
+.hero{display:grid;gap:26px;padding:clamp(72px,11vw,150px) 0 clamp(56px,8vw,110px);justify-items:center;text-align:center}
+.lede{color:var(--muted);max-width:66ch;font-size:1.02rem;line-height:1.7;text-align:center}
+.cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+.btn{font:500 .92rem var(--body);padding:12px 20px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--fg);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:10px}
 .btn:hover{border-color:var(--fg)}
 .btn.primary{background:var(--fg);color:#000;border-color:var(--fg)}
 .btn.primary::before{content:"";width:16px;height:16px;border-radius:3px;background:#000;display:inline-block}
-.btn.primary:hover{filter:none;background:#e8e8e8}
+.btn.primary:hover{background:#e8e8e8}
 .btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.btn:disabled{opacity:.4;cursor:default}
-.round{display:none}
 
-/* hero: centred headline, decoder as a full-width hairline cell below */
-.hero{display:grid;grid-template-columns:1fr;gap:0;padding-block:0}
-.hero .intro{display:grid;gap:26px;padding:clamp(64px,10vw,140px) 0 clamp(40px,6vw,72px);justify-items:center;text-align:center;border:0}
-.hero .intro .ulabel{display:none}
-.cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-.sub{font-size:.8rem;color:var(--dim)}
+.stack{border-top:1px solid var(--line)}
+.stack h2{padding:clamp(40px,6vw,72px) 0;border-bottom:1px solid var(--line)}
+.row{display:grid;grid-template-columns:minmax(0,380px) 1fr;gap:clamp(32px,6vw,96px);padding:clamp(48px,7vw,96px) 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .t{display:grid;gap:18px;align-content:start}
+.row .t h3::after{content:"";display:block;height:1px;background:var(--line);margin-top:18px}
+.row .t p{color:var(--muted);font-size:.95rem;line-height:1.7}
+.row .t a{font-size:.95rem;text-decoration:none;border-bottom:1px solid var(--line2);padding-bottom:3px;width:max-content}
+.row .t a::after{content:" ↗";color:var(--muted)}
+.row .t a:hover{border-color:var(--fg)}
+.row .b{display:grid;gap:14px;align-content:start;min-width:0}
 
-.reader{padding:0;display:grid;gap:0;min-height:0;grid-template-columns:1fr;border-left:0;border-right:0}
-.reader .top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding:14px 0;border-bottom:1px solid var(--line)}
-.decoder{display:grid;grid-template-columns:220px 1fr;gap:0;align-items:center}
-.decoder svg{width:100%;height:auto;display:block;filter:none;padding:28px;border-right:1px solid var(--line)}
-.flags{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:0}
-.flag{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;font-family:var(--mono);font-size:.7rem;padding:10px 16px;border-radius:0;color:var(--dim);border-bottom:1px solid var(--line);border-right:1px solid var(--line)}
-.flag:nth-child(2n){border-right:0}
-.flag.on{color:var(--fg);background:transparent}
-.flag b{font-weight:500;color:var(--dim)}.flag.on b{color:var(--accent)}
-.flag .bit{text-align:right}
-input.addr{font:500 .9rem var(--mono);background:transparent;color:var(--fg);border:0;border-top:1px solid var(--line);border-radius:0;padding:16px 0;width:100%}
-input.addr:focus-visible{outline:none;border-top-color:var(--accent)}
-.hint{font-family:var(--mono);font-size:.7rem;color:var(--dim);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:0 0 16px}
-.hint .ok{color:var(--accent)}.hint .bad{color:var(--bad)}
-
-/* configuration: two hairline columns */
-.foundry{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:48px;align-items:stretch;border:1px solid var(--line)}
-.panel{padding:clamp(22px,3vw,36px);display:grid;gap:20px;min-width:0;border:0;align-content:start}
-.panel:first-child{border-right:1px solid var(--line)}
-.panel h3{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--line)}
-.prims{display:grid;gap:0}
-.prim{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start;padding:14px 0;border:0;border-bottom:1px solid var(--line);border-radius:0;cursor:pointer;background:transparent}
-.prim:last-child{border-bottom:0}
-.prim:has(input:checked){background:transparent;box-shadow:none}
-.prim:has(input:checked) .t{color:var(--accent)}
-.prim input{margin:6px 0 0;accent-color:var(--accent)}
-.prim .t{font-weight:500;font-size:.95rem}.prim .d{color:var(--muted);font-size:.86rem}.prim .f{font-family:var(--mono);font-size:.66rem;color:var(--dim);margin-top:6px}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:.88rem}
-.kv dt{color:var(--dim)}.kv dd{margin:0;font-family:var(--mono);overflow-wrap:anywhere;font-variant-numeric:tabular-nums;font-size:.8rem}
-.tiles{display:flex;gap:0;flex-wrap:wrap;border:1px solid var(--line)}
-.tiles i{width:calc(100% / 14);min-width:26px;height:30px;border:0;border-right:1px solid var(--line);border-radius:0;display:grid;place-items:center;font:500 .62rem var(--mono);color:var(--dim);background:transparent}
+/* decoder strip */
+.dec{border:1px solid var(--line)}
+.dec input{font:500 .92rem var(--mono);background:transparent;color:var(--fg);border:0;border-bottom:1px solid var(--line);padding:16px 18px;width:100%}
+.dec input:focus-visible{outline:none;border-bottom-color:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(14,1fr)}
+.tiles i{height:44px;border-right:1px solid var(--line);display:grid;place-items:center;font:500 .66rem var(--mono);color:var(--dim)}
 .tiles i:last-child{border-right:0}
 .tiles i.on{background:var(--accent);color:var(--accent-ink)}
-.tiles i.hit{box-shadow:inset 0 0 0 2px #fff}
-.meter{height:2px;background:var(--line);border-radius:0;overflow:hidden}
-.meter span{display:block;height:100%;background:var(--accent);width:0}
-.result{border:1px solid var(--line);border-radius:0;padding:16px;display:grid;gap:10px;font-size:.86rem;background:transparent}
-.result.found{border-color:var(--accent)}
-.copy{font:500 .76rem var(--body);padding:6px 12px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--fg);cursor:pointer}
-.copy:hover{border-color:var(--fg)}
-.label{display:grid;gap:10px;font-size:.9rem;padding-top:6px}
-.label .k{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
-.label ul{margin:0;padding-left:18px;color:var(--muted)}
+.dec .f{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:.72rem;color:var(--dim)}
+.dec .f b{color:var(--fg);font-weight:500}
+.dec .f .bad{color:#ff6b6b}
+.list{display:grid}
+.list div{display:grid;grid-template-columns:1fr auto;gap:16px;padding:14px 0;border-bottom:1px solid var(--line);font-size:.95rem}
+.list div:last-child{border-bottom:0}
+.list div span:last-child{font-family:var(--mono);font-size:.72rem;color:var(--muted);white-space:nowrap;align-self:center}
+.list div span:first-child b{font-weight:500;display:block}
+.list div span:first-child small{color:var(--muted);font-size:.86rem}
+.tag{font-size:.7rem;padding:4px 10px;border-radius:6px;border:1px solid var(--accent);color:var(--accent);letter-spacing:.06em;text-transform:uppercase;height:max-content}
 
-/* contracts table */
-th,td{text-align:left;padding:18px 20px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--muted)}
-td:first-child{color:var(--fg);font-weight:500;white-space:nowrap}
-tr:last-child td{border-bottom:0}
-th{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:500;border-bottom:1px solid var(--line2)}
-.pill{font-size:.7rem;padding:4px 10px;border-radius:6px;border:1px solid var(--line2);letter-spacing:.06em;white-space:nowrap;text-transform:uppercase;background:transparent;color:var(--fg)}
-.pill.live{color:var(--accent);border-color:var(--accent)}.pill.soon{color:var(--accent);border-color:var(--accent)}.pill.no{color:var(--muted)}
+footer{padding:28px 0 40px;color:var(--dim);font-size:.82rem;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line)}
 
-footer{padding-block:28px 40px;color:var(--dim);font-size:.82rem;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line)}
-
-@media (max-width:980px){.foundry{grid-template-columns:1fr}.panel:first-child{border-right:0;border-bottom:1px solid var(--line)}.decoder{grid-template-columns:1fr}.decoder svg{border-right:0;border-bottom:1px solid var(--line);max-width:220px;margin:0 auto}}
-@media (max-width:640px){nav ul{display:none}.flags{grid-template-columns:1fr}.flag{border-right:0}}
+@media (max-width:900px){.row{grid-template-columns:1fr}}
+@media (max-width:640px){nav ul{display:none}.tiles i{font-size:.55rem;height:36px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
-<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
-
-<div class="wrap navwrap">
-  <nav>
-    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M14 3v9a5 5 0 0 1-10 0v-1"/><path d="M4 11l-2 2M4 11l2 2"/><circle cx="14" cy="3" r="1.4" fill="var(--blue)"/></svg>NEO</div>
-    <ul><li><a href="#foundry">Configuration</a></li><li><a href="#contracts">Contracts</a></li></ul>
-    <span class="chip"><i></i><span>Robinhood Chain</span><b>4663</b></span>
-  </nav>
-</div>
+<nav>
+  <span class="logo">NEO</span>
+  <ul><li><a href="#tape">Tape</a></li><li><a href="#hook">Hook</a></li><li><a href="#contracts">Contracts</a></li></ul>
+  <span class="chip"><i></i>Robinhood Chain <b>4663</b></span>
+</nav>
 
 <section class="wrap hero">
-  <div class="card intro">
-    <span class="ulabel">Overview</span>
-    <h1>Corporate actions, on-chain, for tokenized equity pools.</h1>
-    <p class="lede">NEO is a <mark>corporate-action oracle</mark> and a set of Uniswap v4 hooks for Robinhood Chain. Tokenized equities split, pay dividends, halt and change symbols; a pool has no record of any of it. The Tape contract records each event, attested by the issuer and open to challenge, and <mark class="sage">NEO hooks enforce it in the swap path</mark> with a single storage read.</p>
-    <div class="cta"><a class="btn primary" href="#foundry">Configure a hook</a><a class="btn" href="#contracts">Contracts</a></div>
-    <p class="sub">Robinhood Chain · chain ID 4663 · Uniswap v4 · no token</p>
-  </div>
-  <div class="deep reader" aria-label="Hook address decoder">
-    <span class="tagf" style="left:8%;top:9%">Permission decoder</span>
-    <span class="tagf" style="right:8%;top:14%" id="tag-count">—</span>
-    <div class="top"><span>Any Uniswap v4 hook address</span><span id="dec-mask">mask 0x0000</span></div>
-    <div class="decoder">
-      <svg id="hook" viewBox="0 0 200 300" aria-hidden="true">
-        <path id="shank" d="M120 18 V150 A58 58 0 1 1 20 190" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="9" stroke-linecap="round"/>
-        <circle cx="120" cy="18" r="12" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="7"/>
-        <g id="barbs"></g>
-        <path d="M20 190 L12 170" stroke="#00ec97" stroke-width="7" stroke-linecap="round"/>
-      </svg>
-      <div class="flags" id="flags"></div>
+  <h1>Corporate actions,<br>on-chain.</h1>
+  <p class="lede">NEO records splits, dividends, halts and symbol changes for tokenized equities on Robinhood Chain, and gives Uniswap v4 pools a hook that enforces them. One contract to read. One storage lookup in the swap path.</p>
+  <div class="cta"><a class="btn primary" href="#hook">Read a hook</a><a class="btn" href="#contracts">View contracts</a></div>
+</section>
+
+<section class="wrap stack">
+  <h2>The NEO stack</h2>
+
+  <div class="row" id="tape">
+    <div class="t">
+      <h3>The Tape: the record every hook reads</h3>
+      <p>Each event is posted with the issuer's attester signature and a bond, held for a dispute window anyone can challenge, then finalized into plain storage and an append-only Merkle tree. Hooks call <span class="mono">isHalted()</span> and <span class="mono">action()</span>; nothing in the swap path waits on an oracle.</p>
+      <a href="#contracts">Interface</a>
     </div>
-    <input class="addr" id="addr" type="text" spellcheck="false" autocomplete="off" value="0x3c9e1f0a7b8d2c4e5f6071829304a5b6c7d980c8" aria-label="Hook address">
-    <div class="hint"><span id="dec-note">Example address. Reads 3 of 14 flags.</span><span id="dec-valid" class="ok">valid 20-byte address</span></div>
+    <div class="b list">
+      <div><span><b>Split</b><small>new shares per old share, 1e4 scale</small></span><span>Kind.Split</span></div>
+      <div><span><b>Dividend</b><small>cash per share, quote-asset minor units</small></span><span>Kind.Dividend</span></div>
+      <div><span><b>Halt</b><small>on or off</small></span><span>Kind.Halt</span></div>
+      <div><span><b>Rename</b><small>new symbol</small></span><span>Kind.Rename</span></div>
+    </div>
+  </div>
+
+  <div class="row" id="hook">
+    <div class="t">
+      <h3>CorporateActionHook: enforcement in the pool</h3>
+      <p>A pool bound to a symbol refuses swaps and new liquidity while the stock is halted, and from a split or rename's effective time until the pool operator acknowledges it. Removing liquidity is never blocked. Uniswap v4 reads a hook's permissions from the lowest fourteen bits of its address; paste any hook to read them.</p>
+      <a href="#contracts">Permissions</a>
+    </div>
+    <div class="b">
+      <div class="dec">
+        <input id="addr" type="text" spellcheck="false" autocomplete="off" value="0x3c9e1f0a7b8d2c4e5f6071829304a5b6c7d980c8" aria-label="Hook address">
+        <div class="tiles" id="tiles"></div>
+        <div class="f"><span id="note">—</span><span id="valid">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" id="contracts">
+    <div class="t">
+      <h3>Contracts and tests</h3>
+      <p>Solidity 0.8.26, Foundry. Twenty-three tests run against a live Uniswap v4 PoolManager: hook address derivation, halt and split enforcement in real swaps, the post, challenge and resolve lifecycle, and Merkle roots checked against a reference tree. Nothing is deployed or audited yet.</p>
+      <a href="#contracts">Source</a>
+    </div>
+    <div class="b list">
+      <div><span><b>Tape</b><small>attest · challenge · finalize · Merkle</small></span><span class="tag">14 tests</span></div>
+      <div><span><b>CorporateActionHook</b><small>BEFORE_SWAP · BEFORE_ADD_LIQUIDITY</small></span><span class="tag">9 tests</span></div>
+      <div><span><b>IncrementalMerkle</b><small>depth 20 · ordered proofs</small></span><span>library</span></div>
+    </div>
   </div>
 </section>
 
-<section class="band wrap" id="foundry">
-  <div class="head">
-    <span class="kicker">Configuration</span>
-    <h2>Select modules. Derive the permitted address.</h2>
-    <p class="lede">Uniswap v4 reads a hook's permissions from the <mark>lowest fourteen bits of its address</mark>, so a hook must be deployed via CREATE2 at a salt that yields exactly those bits. The search below runs keccak-256 in the browser against an example deployer and init-code hash. Fee split, fixed at deployment: 80% liquidity providers, 15% treasury, 5% event poster.</p>
-  </div>
-  <div class="foundry">
-    <div class="card panel">
-      <h3>Modules <span class="mono" style="font-size:.7rem;color:var(--muted)" id="prim-count">2 selected</span></h3>
-      <div class="prims" id="prims"></div>
-    </div>
-    <div class="card panel">
-      <dl class="kv"><dt>Deployer</dt><dd id="deployer">0x0E00E00E00E00E00E00E00E00E00E00E00E00E00</dd><dt>Init-code hash</dt><dd id="ich">—</dd><dt>Target mask</dt><dd id="mask-hex">0x0000</dd></dl>
-      <div class="tiles" id="tiles"></div>
-      <div class="cta"><button class="btn primary" id="mine">Derive address</button><button class="btn" id="stop" disabled>Stop</button></div>
-      <div class="meter"><span id="meter"></span></div>
-      <div class="result" id="result"><span class="mono" style="color:var(--muted)" id="r-status">Ready. Expected 16,384 attempts.</span></div>
-      <div class="label" style="padding:0"><span class="k">Manifest · returned by label()</span><ul id="label-list"></ul></div>
-    </div>
-  </div>
-</section>
-
-<section class="band wrap" id="contracts" style="padding-top:0">
-  <div class="head">
-    <span class="kicker">Contracts</span>
-    <h2>Source and test status</h2>
-  </div>
-  <div class="card" style="margin-top:40px;overflow-x:auto">
-    <table style="width:100%;border-collapse:collapse;font-size:.9rem;min-width:560px">
-      <thead><tr><th>Contract</th><th>Role</th><th>Permissions</th><th>Status</th></tr></thead>
-      <tbody>
-        <tr><td>Tape</td><td>Corporate-action record. EIP-712 attester signatures, bonded post and challenge, dispute window, reviewer resolution, append-only Merkle tree.</td><td class="mono">—</td><td><span class="pill soon">Tested</span></td></tr>
-        <tr><td>CorporateActionHook</td><td>Refuses swaps and new liquidity while a symbol is halted, or from a split or rename until the pool operator acknowledges. Never blocks withdrawal.</td><td class="mono">BEFORE_SWAP · BEFORE_ADD_LIQUIDITY</td><td><span class="pill soon">Tested</span></td></tr>
-        <tr><td>IncrementalMerkle</td><td>Depth-20 keccak tree, ordered sibling proofs.</td><td class="mono">—</td><td><span class="pill soon">Tested</span></td></tr>
-      </tbody>
-    </table>
-    <p class="sub" style="padding:16px 20px 20px;border-top:1px solid var(--line)">Foundry suite: 23 tests passing against a live PoolManager, including hook address derivation, Merkle root verification against a reference tree, and the full post → challenge → resolve lifecycle. No contract is deployed or audited.</p>
-  </div>
-</section>
-
-<footer class="wrap" style="padding-top:8px"><span>NEO is an independent project and is not affiliated with Robinhood, Uniswap or Arbitrum. Not an offer or financial advice.</span><span class="mono" style="font-size:.78rem">© 2026 NEO</span></footer>
-
-
+<footer class="wrap"><span>NEO is independent and not affiliated with Robinhood, Uniswap or Arbitrum. Not an offer or financial advice.</span><span class="mono">© 2026 NEO</span></footer>
 
 <script>
 (function(){
   const $=id=>document.getElementById(id);
-  const NS='http://www.w3.org/2000/svg';
-  const hex=(n,w)=>'0x'+n.toString(16).padStart(w,'0');
-
-  /* ================= decoder ================= */
-  const FLAGS=[[13,'BEFORE_INITIALIZE','runs before a pool is created under it'],[12,'AFTER_INITIALIZE','runs after a pool is created under it'],[11,'BEFORE_ADD_LIQUIDITY','can refuse or shape a deposit'],[10,'AFTER_ADD_LIQUIDITY','sees every deposit after it lands'],[9,'BEFORE_REMOVE_LIQUIDITY','can refuse or shape a withdrawal'],[8,'AFTER_REMOVE_LIQUIDITY','sees every withdrawal after it lands'],[7,'BEFORE_SWAP','runs before every swap'],[6,'AFTER_SWAP','runs after every swap'],[5,'BEFORE_DONATE','runs before a donation to LPs'],[4,'AFTER_DONATE','runs after a donation to LPs'],[3,'BEFORE_SWAP_RETURNS_DELTA','can take or add tokens before a swap'],[2,'AFTER_SWAP_RETURNS_DELTA','can take or add tokens after a swap'],[1,'AFTER_ADD_LIQUIDITY_RETURNS_DELTA','can adjust what a deposit settles'],[0,'AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA','can adjust what a withdrawal settles']];
-  const ON='#00ec97', OFF='rgba(255,255,255,.3)';
-  const flagsEl=$('flags');
-  FLAGS.forEach(([b,n,d])=>{ const el=document.createElement('div'); el.className='flag'; el.id='f'+b; el.title=d; el.innerHTML=`<b>${String(b).padStart(2,' ')}</b><span>${n}</span><span class="bit">1&lt;&lt;${b}</span>`; flagsEl.appendChild(el); });
-  const shank=$('shank'), barbs=$('barbs'); const L=shank.getTotalLength();
-  FLAGS.forEach((f,i)=>{ const t=.30+(i/13)*.66; const p=shank.getPointAtLength(L*t), q=shank.getPointAtLength(L*Math.min(1,t+.004)); const ang=Math.atan2(q.y-p.y,q.x-p.x); const nx=Math.cos(ang+Math.PI/2), ny=Math.sin(ang+Math.PI/2);
-    const ln=document.createElementNS(NS,'line'); ln.setAttribute('x1',p.x-nx*4); ln.setAttribute('y1',p.y-ny*4); ln.setAttribute('x2',p.x-nx*22); ln.setAttribute('y2',p.y-ny*22); ln.setAttribute('stroke',OFF); ln.setAttribute('stroke-width','4'); ln.setAttribute('stroke-linecap','round'); ln.id='b'+f[0]; barbs.appendChild(ln); });
-  function draw(mask){ FLAGS.forEach(([b])=>{ const on=!!(mask>>b&1); $('f'+b).classList.toggle('on',on); const ln=$('b'+b); ln.setAttribute('stroke',on?ON:OFF); ln.setAttribute('stroke-width',on?'6':'4'); }); $('dec-mask').textContent='mask '+hex(mask,4); }
-  const EXAMPLE='0x3c9e1f0a7b8d2c4e5f6071829304a5b6c7d980c8';
-  function decode(){ const v=$('addr').value.trim(); const ok=/^0x[0-9a-fA-F]{40}$/.test(v);
-    $('dec-valid').textContent=ok?'valid 20-byte address':'needs 0x + 40 hex characters'; $('dec-valid').className=ok?'ok':'bad';
-    if(!ok){ draw(0); $('dec-note').textContent='Waiting for a full address.'; $('tag-count').textContent='—'; return; }
-    const mask=parseInt(v.slice(-4),16)&0x3fff; draw(mask); const c=FLAGS.filter(([b])=>mask>>b&1).length;
-    $('dec-note').textContent=(v.toLowerCase()===EXAMPLE?'Example address. ':'')+`Reads ${c} of 14 flags.`; $('tag-count').textContent=c+' of 14 flags'; }
+  const NAMES=['BEFORE_INITIALIZE','AFTER_INITIALIZE','BEFORE_ADD_LIQUIDITY','AFTER_ADD_LIQUIDITY','BEFORE_REMOVE_LIQUIDITY','AFTER_REMOVE_LIQUIDITY','BEFORE_SWAP','AFTER_SWAP','BEFORE_DONATE','AFTER_DONATE','BEFORE_SWAP_RETURNS_DELTA','AFTER_SWAP_RETURNS_DELTA','AFTER_ADD_LIQUIDITY_RETURNS_DELTA','AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA'];
+  const tiles=$('tiles');
+  for(let b=13;b>=0;b--){ const i=document.createElement('i'); i.id='t'+b; i.textContent=b; i.title=NAMES[13-b]; tiles.appendChild(i); }
+  function decode(){
+    const v=$('addr').value.trim(); const ok=/^0x[0-9a-fA-F]{40}$/.test(v);
+    $('valid').textContent=ok?'valid address':'0x + 40 hex characters'; $('valid').className=ok?'':'bad';
+    if(!ok){ for(let b=0;b<14;b++) $('t'+b).className=''; $('note').textContent='—'; return; }
+    const mask=parseInt(v.slice(-4),16)&0x3fff; const on=[];
+    for(let b=13;b>=0;b--){ const s=!!(mask>>b&1); $('t'+b).className=s?'on':''; if(s) on.push(NAMES[13-b]); }
+    $('note').innerHTML='mask <b>0x'+mask.toString(16).padStart(4,'0')+'</b> · '+on.length+' of 14 · '+(on.join(' · ')||'none');
+  }
   $('addr').addEventListener('input',decode); decode();
-
-  /* ================= foundry ================= */
-  const PRIMS=[
-    {id:'halt',t:'Corporate-action halt',d:'Pauses swaps and liquidity across a split, and while halted.',bits:[7,11,9],on:true},
-    {id:'div',t:'Dividend pass-through',d:'Donates the cash dividend to in-range LPs on pay date.',bits:[5,6],on:true},
-    {id:'luld',t:'Limit up / limit down',d:'Caps the per-swap move from the reference price.',bits:[7,3]},
-    {id:'gate',t:'Eligibility gate',d:'Only cleared wallets may swap or add liquidity.',bits:[7,11]},
-    {id:'anchor',t:'Reference anchor',d:'Fee rises with deviation from the oracle print; re-based on splits.',bits:[12,7,6]},
-    {id:'vol',t:'Volatility fee',d:'Fee follows realised volatility and steps up after any Tape event.',bits:[7,6]},
-  ];
-  const primsEl=$('prims');
-  PRIMS.forEach(p=>{ const l=document.createElement('label'); l.className='prim'; l.innerHTML=`<input type="checkbox" id="p-${p.id}" ${p.on?'checked':''}><div><div class="t">${p.t}</div><div class="d">${p.d}</div><div class="f">${p.bits.map(b=>FLAGS.find(f=>f[0]===b)[1]).join(' · ')}</div></div>`; primsEl.appendChild(l); l.querySelector('input').addEventListener('change',update); });
-  const tilesEl=$('tiles'); for(let b=13;b>=0;b--){ const i=document.createElement('i'); i.id='t'+b; i.textContent=b; tilesEl.appendChild(i); }
-  let mask=0, ich='', mining=false, found=null, salt=0, tries=0, t0=0;
-  function selected(){ return PRIMS.filter(p=>$('p-'+p.id).checked); }
-  function update(){ const sl=selected(); mask=0; sl.forEach(p=>p.bits.forEach(b=>mask|=1<<b));
-    $('prim-count').textContent=sl.length+' selected'; $('mask-hex').textContent=hex(mask,4);
-    for(let b=0;b<14;b++) $('t'+b).className=(mask>>b&1)?'on':'';
-    ich=sl.length?'0x'+sha3.keccak_256('neo-v0:'+sl.map(p=>p.id).sort().join('+')):'—'; $('ich').textContent=ich;
-    $('label-list').innerHTML=sl.length? sl.flatMap(p=>p.bits).filter((b,i,a)=>a.indexOf(b)===i).sort((a,b)=>b-a).map(b=>`<li>This hook ${FLAGS.find(f=>f[0]===b)[2]}.</li>`).join('')+'<li>It reads corporate-action state from the Tape. No other permission is set; the address encodes this.</li>' : '<li>No modules selected.</li>';
-    stopMining(); found=null; $('result').className='result'; $('result').innerHTML='<span class="mono" style="color:var(--muted)" id="r-status">'+(sl.length?'Ready. Target '+hex(mask,4)+' · expected 16,384 attempts.':'Select at least one module.')+'</span>'; $('meter').style.width='0'; $('mine').disabled=!sl.length; }
-  function create2(dep,saltHex,ichHex){ const bytes=new Uint8Array(85); bytes[0]=0xff; const put=(h,off)=>{ for(let i=0;i<h.length/2;i++) bytes[off+i]=parseInt(h.substr(i*2,2),16); }; put(dep.slice(2),1); put(saltHex,21); put(ichHex.slice(2),53); return '0x'+sha3.keccak_256(bytes).slice(24); }
-  function stopMining(){ mining=false; $('mine').disabled=!selected().length; $('stop').disabled=true; }
-  function tick(){ if(!mining) return; const dep=$('deployer').textContent;
-    for(let i=0;i<400;i++){ const sh=salt.toString(16).padStart(64,'0'); const a=create2(dep,sh,ich); tries++; if((parseInt(a.slice(-4),16)&0x3fff)===mask){ found={salt:sh,addr:a}; break; } salt++; }
-    $('meter').style.width=Math.min(100,tries/16384*100)+'%';
-    if(found){ const ms=performance.now()-t0; stopMining(); $('result').className='result found';
-      $('result').innerHTML=`<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span class="mono" style="color:var(--good)">Found after ${tries.toLocaleString()} attempts · ${(ms/1000).toFixed(2)} s</span><button class="copy" id="cp">Copy address</button></div><dl class="kv"><dt>Hook address</dt><dd>${found.addr}</dd><dt>Salt</dt><dd>0x${found.salt}</dd><dt>Low 14 bits</dt><dd>${hex(parseInt(found.addr.slice(-4),16)&0x3fff,4)} = target</dd></dl><p class="sub">Loaded into the decoder above.</p>`;
-      $('cp').onclick=async()=>{ try{ await navigator.clipboard.writeText(found.addr); $('cp').textContent='Copied'; }catch(e){ $('cp').textContent='Select to copy'; } };
-      $('addr').value=found.addr; decode(); for(let b=0;b<14;b++) $('t'+b).classList.toggle('hit',!!(mask>>b&1)); return; }
-    $('r-status').textContent=`Searching… ${tries.toLocaleString()} attempts · salt ${salt}`; setTimeout(tick,0); }
-  $('mine').onclick=()=>{ if(!selected().length) return; mining=true; found=null; salt=Math.floor(Math.random()*1e9); tries=0; t0=performance.now(); $('mine').disabled=true; $('stop').disabled=false; $('result').className='result'; $('result').innerHTML='<span class="mono" style="color:var(--muted)" id="r-status">Searching…</span>'; for(let b=0;b<14;b++) $('t'+b).classList.remove('hit'); tick(); };
-  $('stop').onclick=()=>{ stopMining(); $('result').innerHTML=`<span class="mono" style="color:var(--muted)" id="r-status">Stopped after ${tries.toLocaleString()} attempts.</span>`; };
-  update();
 })();
 </script>
