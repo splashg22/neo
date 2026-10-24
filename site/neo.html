@@ -4,8 +4,8 @@
 <style>
 /* Layout: institutional light. Warm off-white ground, near-black type, grey second clauses, hairline rules, mono bracket numbering, black rectangular buttons, a fine-line tape drawing in the hero. Single light theme by design. */
 :root{
-  --bg:#e8ede6;--fg:#0f2a22;--muted:#5f7369;--dim:#93a59b;--line:rgba(15,42,34,.14);--line2:rgba(15,42,34,.34);--bronze:#b5752b;
-  --ink:#0f2a22;--ink-fg:#e8ede6;--ok:#1f7a4d;--bad:#b4362f;
+  --bg:#f3eee3;--fg:#17382c;--muted:#6b7a6e;--dim:#a3ad9f;--line:rgba(23,56,44,.14);--line2:rgba(23,56,44,.32);--bronze:#9fdcb0;--green:#9fdcb0;--green2:#c6ecd0;
+  --ink:#17382c;--ink-fg:#f3eee3;--ok:#1f7a4d;--bad:#b4362f;
   --body:"Instrument Sans",system-ui,-apple-system,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   color-scheme:light;
@@ -35,10 +35,10 @@ nav ul a:hover,nav ul a:focus-visible{color:var(--fg)}
 .hero svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1;display:block}
 .lede{color:var(--muted);max-width:60ch;font-size:1.1rem;line-height:1.65;text-align:center}
 .cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px}
-.btn{font:500 .95rem var(--body);padding:13px 22px;border-radius:4px;border:1px solid var(--ink);background:var(--ink);color:var(--ink-fg);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
-.btn:hover{background:#1a3f34}
+.btn{font:500 .95rem var(--body);padding:13px 22px;border-radius:4px;border:1px solid var(--green);background:var(--green);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.btn:hover{background:var(--green2);border-color:var(--green2)}
 .btn.ghost{background:transparent;color:var(--fg);border-color:var(--line2)}
-.btn.ghost:hover{border-color:var(--ink);background:transparent}
+.btn.ghost:hover{border-color:var(--ink);background:var(--green2)}
 .btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 
 .sec{padding:clamp(56px,8vw,104px) 0 0}
@@ -58,18 +58,18 @@ nav ul a:hover,nav ul a:focus-visible{color:var(--fg)}
 .list small{color:var(--muted);font-size:.9rem}
 .list .n{white-space:nowrap}
 
-.dec{border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#f1f4ef}
+.dec{border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#faf7f0}
 .dec input{font:500 .95rem var(--mono);background:transparent;color:var(--fg);border:0;border-bottom:1px solid var(--line);padding:16px 18px;width:100%}
 .dec input:focus-visible{outline:none;border-bottom-color:var(--ink)}
 .tiles{display:grid;grid-template-columns:repeat(14,1fr)}
 .tiles i{height:46px;border-right:1px solid var(--line);display:grid;place-items:center;font:500 .68rem var(--mono);color:var(--dim)}
 .tiles i:last-child{border-right:0}
-.tiles i.on{background:var(--bronze);color:#fff}
+.tiles i.on{background:var(--green);color:var(--ink)}
 .dec .f{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:.74rem;color:var(--muted)}
 .dec .f b{color:var(--fg);font-weight:500}
 .dec .f .ok{color:var(--ok)}.dec .f .bad{color:var(--bad)}
 
-.status{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:4px;background:#f1f4ef}
+.status{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:4px;background:#faf7f0}
 .status div{padding:22px 24px;border-right:1px solid var(--line);display:grid;gap:6px}
 .status div:last-child{border-right:0}
 .status .v{font-size:2rem;letter-spacing:-.03em;line-height:1}
@@ -83,7 +83,7 @@ footer{padding:36px 0 48px;color:var(--muted);font-size:.86rem;display:flex;just
 </style>
 
 <nav class="wrap">
-  <a class="logo" href="#"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="var(--ink)"/><path d="M4 17.5H11.5C13 17.5 13 10.5 14.5 10.5H24" fill="none" stroke="var(--ink-fg)" stroke-width="1.8" stroke-linecap="round"/><circle cx="13" cy="14" r="2.2" fill="var(--bronze)"/></svg>NEO</a>
+  <a class="logo" href="#"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="6" fill="var(--ink)"/><path d="M4 17.5H11.5C13 17.5 13 10.5 14.5 10.5H24" fill="none" stroke="var(--ink-fg)" stroke-width="1.8" stroke-linecap="round"/><circle cx="13" cy="14" r="2.2" fill="var(--green)"/></svg>NEO</a>
   <ul><li><a href="#tape">Tape</a></li><li><a href="#hook">Hook</a></li><li><a href="#contracts">Contracts</a></li></ul>
 </nav>
 
@@ -154,9 +154,9 @@ footer{padding:36px 0 48px;color:var(--muted);font-size:.86rem;display:flex;just
       const y=40+i*(H-80)/(n-1); const x=180+rnd()*840; const d=(rnd()-.5)*22;
       const p=document.createElementNS(NS,'path');
       p.setAttribute('d',`M0 ${y} H${x-18} C${x-6} ${y} ${x-6} ${y+d} ${x+6} ${y+d} H${W}`);
-      p.setAttribute('fill','none'); p.setAttribute('stroke','rgba(15,42,34,.18)'); p.setAttribute('stroke-width','1'); p.setAttribute('vector-effect','non-scaling-stroke');
+      p.setAttribute('fill','none'); p.setAttribute('stroke','rgba(23,56,44,.16)'); p.setAttribute('stroke-width','1'); p.setAttribute('vector-effect','non-scaling-stroke');
       svg.appendChild(p);
-      if(i%5===2){ const c=document.createElementNS(NS,'circle'); c.setAttribute('cx',x-6); c.setAttribute('cy',y+d/2); c.setAttribute('r','2.5'); c.setAttribute('fill','#b5752b'); svg.appendChild(c); }
+      if(i%5===2){ const c=document.createElementNS(NS,'circle'); c.setAttribute('cx',x-6); c.setAttribute('cy',y+d/2); c.setAttribute('r','2.5'); c.setAttribute('fill','#6cc48a'); svg.appendChild(c); }
     }
   })();
 
