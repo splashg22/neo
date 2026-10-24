@@ -4,8 +4,8 @@
 <style>
 /* Layout: institutional light. Warm off-white ground, near-black type, grey second clauses, hairline rules, mono bracket numbering, black rectangular buttons, a fine-line tape drawing in the hero. Single light theme by design. */
 :root{
-  --bg:#faf9f6;--fg:#141414;--muted:#7a7a78;--dim:#a9a8a4;--line:rgba(20,20,20,.12);--line2:rgba(20,20,20,.3);
-  --ink:#141414;--ink-fg:#faf9f6;--ok:#1f7a4d;--bad:#b4362f;
+  --bg:#e8ede6;--fg:#0f2a22;--muted:#5f7369;--dim:#93a59b;--line:rgba(15,42,34,.14);--line2:rgba(15,42,34,.34);--bronze:#b5752b;
+  --ink:#0f2a22;--ink-fg:#e8ede6;--ok:#1f7a4d;--bad:#b4362f;
   --body:"Instrument Sans",system-ui,-apple-system,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   color-scheme:light;
@@ -27,7 +27,7 @@ p{margin:0}a{color:inherit}
 nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);display:flex;align-items:center;justify-content:space-between;height:72px}
 .logo{display:flex;align-items:center;gap:12px;font-weight:500;letter-spacing:.1em;font-size:1rem;text-decoration:none}
 .logo i{display:block;width:26px;height:26px;border-radius:50%;background:var(--ink);position:relative}
-.logo i::after{content:"";position:absolute;left:11px;top:4px;width:4px;height:18px;background:var(--bg)}
+.logo i::after{content:"";position:absolute;left:11px;top:4px;width:4px;height:18px;background:var(--bronze)}
 nav ul{list-style:none;display:flex;gap:28px;margin:0;padding:0;font-size:.95rem}
 nav ul a{text-decoration:none;color:var(--muted)}
 nav ul a:hover,nav ul a:focus-visible{color:var(--fg)}
@@ -37,7 +37,7 @@ nav ul a:hover,nav ul a:focus-visible{color:var(--fg)}
 .lede{color:var(--muted);max-width:60ch;font-size:1.1rem;line-height:1.65;text-align:center}
 .cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px}
 .btn{font:500 .95rem var(--body);padding:13px 22px;border-radius:4px;border:1px solid var(--ink);background:var(--ink);color:var(--ink-fg);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
-.btn:hover{background:#2a2a2a}
+.btn:hover{background:#1a3f34}
 .btn.ghost{background:transparent;color:var(--fg);border-color:var(--line2)}
 .btn.ghost:hover{border-color:var(--ink);background:transparent}
 .btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
@@ -59,18 +59,18 @@ nav ul a:hover,nav ul a:focus-visible{color:var(--fg)}
 .list small{color:var(--muted);font-size:.9rem}
 .list .n{white-space:nowrap}
 
-.dec{border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#fff}
+.dec{border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#f1f4ef}
 .dec input{font:500 .95rem var(--mono);background:transparent;color:var(--fg);border:0;border-bottom:1px solid var(--line);padding:16px 18px;width:100%}
 .dec input:focus-visible{outline:none;border-bottom-color:var(--ink)}
 .tiles{display:grid;grid-template-columns:repeat(14,1fr)}
 .tiles i{height:46px;border-right:1px solid var(--line);display:grid;place-items:center;font:500 .68rem var(--mono);color:var(--dim)}
 .tiles i:last-child{border-right:0}
-.tiles i.on{background:var(--ink);color:var(--ink-fg)}
+.tiles i.on{background:var(--bronze);color:#fff}
 .dec .f{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:.74rem;color:var(--muted)}
 .dec .f b{color:var(--fg);font-weight:500}
 .dec .f .ok{color:var(--ok)}.dec .f .bad{color:var(--bad)}
 
-.status{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:4px;background:#fff}
+.status{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:4px;background:#f1f4ef}
 .status div{padding:22px 24px;border-right:1px solid var(--line);display:grid;gap:6px}
 .status div:last-child{border-right:0}
 .status .v{font-size:2rem;letter-spacing:-.03em;line-height:1}
@@ -155,9 +155,9 @@ footer{padding:36px 0 48px;color:var(--muted);font-size:.86rem;display:flex;just
       const y=40+i*(H-80)/(n-1); const x=180+rnd()*840; const d=(rnd()-.5)*22;
       const p=document.createElementNS(NS,'path');
       p.setAttribute('d',`M0 ${y} H${x-18} C${x-6} ${y} ${x-6} ${y+d} ${x+6} ${y+d} H${W}`);
-      p.setAttribute('fill','none'); p.setAttribute('stroke','rgba(20,20,20,.16)'); p.setAttribute('stroke-width','1'); p.setAttribute('vector-effect','non-scaling-stroke');
+      p.setAttribute('fill','none'); p.setAttribute('stroke','rgba(15,42,34,.18)'); p.setAttribute('stroke-width','1'); p.setAttribute('vector-effect','non-scaling-stroke');
       svg.appendChild(p);
-      if(i%5===2){ const c=document.createElementNS(NS,'circle'); c.setAttribute('cx',x-6); c.setAttribute('cy',y+d/2); c.setAttribute('r','2.5'); c.setAttribute('fill','#141414'); svg.appendChild(c); }
+      if(i%5===2){ const c=document.createElementNS(NS,'circle'); c.setAttribute('cx',x-6); c.setAttribute('cy',y+d/2); c.setAttribute('r','2.5'); c.setAttribute('fill','#b5752b'); svg.appendChild(c); }
     }
   })();
 
