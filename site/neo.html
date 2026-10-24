@@ -1,0 +1,272 @@
+<title>NEO</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha3/0.8.0/sha3.min.js"></script>
+<style>
+/* Layout: ice-glass. Pale blue-white ground, huge-radius cards alternating frosted white and deep navy with a soft glow, pastel highlighter phrases, underlined small-caps labels, pill controls. Single light theme by design. */
+:root{
+  --bg:#f3f6fb;--bg2:#e9eef7;
+  --card:rgba(255,255,255,.72);--card-line:rgba(255,255,255,.95);--card-shadow:0 24px 70px rgba(28,46,92,.10),0 2px 6px rgba(28,46,92,.04);
+  --navy:#060a2a;--navy2:#0a1660;--glow:#4d7cff;
+  --fg:#0f1324;--muted:#5b6274;--dim:#9aa3b8;--line:rgba(15,19,36,.08);
+  --blue:#0a5bff;--blue-ink:#ffffff;
+  --hl-lav:#dcd9ff;--hl-mint:#cfeedb;--hl-pink:#f2d7f3;--hl-blue:#d6e4ff;
+  --good:#1f9a62;--warn:#b7791f;--bad:#d14343;
+  --body:"Inter",system-ui,-apple-system,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:40px;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.aurora{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.aurora i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+.aurora i:nth-child(1){width:60vw;height:60vw;left:-15vw;top:-10vw;background:#dfe8ff}
+.aurora i:nth-child(2){width:50vw;height:50vw;right:-15vw;top:30vh;background:#e9e3ff}
+.aurora i:nth-child(3){width:50vw;height:50vw;left:10vw;top:120vh;background:#d9ecff}
+h1,h2,h3{margin:0;text-wrap:balance;line-height:1.05}
+h1{font-size:clamp(2.6rem,6.4vw,5rem);font-weight:500;letter-spacing:-.04em}
+h2{font-size:clamp(1.7rem,3.6vw,2.7rem);font-weight:400;letter-spacing:-.01em;text-transform:uppercase;line-height:1.12}
+h3{font-size:1.05rem;font-weight:600;letter-spacing:-.01em}
+p{margin:0}a{color:inherit}
+mark{background:var(--hl-blue);color:inherit;border-radius:6px;padding:1px 6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+mark.sage{background:var(--hl-mint)}mark.plum{background:var(--hl-pink)}mark.sand{background:var(--hl-lav)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.band{padding-block:clamp(40px,6vw,80px)}
+.kicker{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.ulabel{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;text-decoration:underline;text-underline-offset:5px;text-decoration-thickness:1px;color:var(--fg)}
+.lede{color:var(--muted);max-width:58ch;font-size:1.05rem;line-height:1.7}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.head{display:grid;gap:18px;max-width:720px}
+
+.card{background:var(--card);border:1px solid var(--card-line);border-radius:var(--r);box-shadow:var(--card-shadow);backdrop-filter:blur(18px)}
+.deep{background:radial-gradient(120% 90% at 50% 110%,var(--navy2) 0%,var(--navy) 60%);color:#eef2ff;border-radius:var(--r);box-shadow:0 30px 80px rgba(6,10,42,.35);position:relative;overflow:hidden}
+.deep::after{content:"";position:absolute;left:50%;top:0;width:2px;height:45%;background:linear-gradient(180deg,rgba(255,255,255,.9),transparent);transform:translateX(-50%);opacity:.6;pointer-events:none}
+.tagf{position:absolute;font-size:.78rem;padding:8px 16px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(8px);color:#e8edff;z-index:1}
+
+.navwrap{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;padding-block:14px;pointer-events:none}
+nav{pointer-events:auto;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 8px 8px 18px;border-radius:999px;background:rgba(255,255,255,.65);border:1px solid var(--card-line);backdrop-filter:blur(18px);box-shadow:0 10px 30px rgba(28,46,92,.08);flex-wrap:wrap}
+.logo{font-weight:600;letter-spacing:.22em;font-size:1rem;display:flex;align-items:center;gap:10px}
+.logo svg{width:18px;height:18px}
+nav ul{list-style:none;display:flex;gap:22px;margin:0;padding:0;font-size:.82rem;color:var(--muted)}
+nav ul a{text-decoration:none}nav ul a:hover,nav ul a:focus-visible{color:var(--fg)}
+.chip{font-size:.74rem;padding:9px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);display:inline-flex;gap:8px;align-items:center;color:var(--muted);white-space:nowrap}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px rgba(10,91,255,.15)}
+.chip b{color:var(--fg);font-weight:500}
+
+.btn{font:500 .92rem var(--body);padding:14px 24px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--fg);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(28,46,92,.06)}
+.btn:hover{border-color:rgba(10,91,255,.35)}
+.btn.primary{background:var(--blue);color:var(--blue-ink);border-color:var(--blue);box-shadow:0 14px 34px rgba(10,91,255,.3)}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+.btn:disabled{opacity:.45;cursor:default;box-shadow:none}
+.round{width:52px;height:52px;border-radius:50%;padding:0;justify-content:center;background:rgba(255,255,255,.8)}
+
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding-block:clamp(24px,4vw,56px)}
+.hero .intro{display:grid;gap:28px;padding:clamp(28px,4vw,56px);align-content:center}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.sub{font-size:.78rem;color:var(--dim)}
+
+.reader{padding:clamp(26px,3.6vw,44px);display:grid;gap:20px;min-height:560px;align-content:space-between}
+.reader .top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:#aab6ea}
+.decoder{display:grid;grid-template-columns:150px 1fr;gap:18px;align-items:center}
+.decoder svg{width:100%;height:auto;display:block;filter:drop-shadow(0 0 30px rgba(77,124,255,.55))}
+.flags{display:grid;gap:3px}
+.flag{display:grid;grid-template-columns:20px 1fr auto;gap:8px;align-items:center;font-family:var(--mono);font-size:.66rem;padding:3px 8px;border-radius:8px;color:#6e7bb8}
+.flag.on{color:#fff;background:rgba(255,255,255,.1)}
+.flag b{font-weight:500;color:#6e7bb8}.flag.on b{color:#9fc2ff}
+.flag .bit{text-align:right}
+input.addr{font:500 .84rem var(--mono);background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:12px 16px;width:100%}
+input.addr:focus-visible{outline:2px solid #9fc2ff;outline-offset:1px}
+.hint{font-family:var(--mono);font-size:.68rem;color:#8e9bd6;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hint .ok{color:#7fe3b0}.hint .bad{color:#ff8d8d}
+
+.merkle{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:40px;align-items:stretch}
+.code{padding:clamp(24px,3vw,40px);font-family:var(--mono);font-size:.8rem;line-height:1.75;color:#aab6ea;overflow-x:auto;display:grid;align-content:center}
+.code b{color:#9fc2ff;font-weight:500}.code i{color:#fff;font-style:normal}.code em{color:#6e7bb8;font-style:normal}
+.mpanel{padding:clamp(22px,3vw,32px);display:grid;gap:14px;min-width:0}
+.mpanel label{font-size:.8rem;color:var(--muted)}
+.mpanel select{font:500 .86rem var(--mono);background:#fff;color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:11px 16px;width:100%}
+.mpanel select:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.leaf{font-family:var(--mono);font-size:.76rem;color:var(--fg);background:var(--bg2);border-radius:14px;padding:10px 14px;overflow-wrap:anywhere}
+.proof{display:grid;gap:4px;font-family:var(--mono);font-size:.68rem;color:var(--muted)}
+.proof div{display:grid;grid-template-columns:28px 1fr;gap:8px;overflow-wrap:anywhere}
+.proof div b{color:var(--blue);font-weight:500}
+.verdict{font-family:var(--mono);font-size:.82rem;padding:12px 16px;border-radius:14px;border:1px solid var(--line)}
+.verdict.ok{color:var(--good);border-color:rgba(31,154,98,.4)}
+.verdict.no{color:var(--bad);border-color:rgba(209,67,67,.4)}
+.treeviz{display:grid;gap:5px}
+.treeviz .lvl{display:flex;gap:3px;align-items:center}
+.treeviz .lvl span{flex:1;height:8px;border-radius:4px;background:var(--bg2);min-width:1px}
+.treeviz .lvl span.hot{background:var(--blue)}
+.treeviz .lvl span.sib{background:#9fb9ff}
+.treeviz .lvl i{font-family:var(--mono);font-size:.6rem;color:var(--dim);width:34px;flex:none;text-align:right}
+.tape{display:grid;gap:6px;max-height:220px;overflow:auto;padding-right:4px}
+.tape div{display:grid;grid-template-columns:64px 1fr auto;gap:10px;font-family:var(--mono);font-size:.7rem;color:var(--muted);padding:6px 10px;border-radius:10px;border:1px solid transparent}
+.tape div.sel{border-color:rgba(10,91,255,.4);color:var(--fg);background:var(--hl-blue)}
+.tape div b{color:var(--blue);font-weight:500}
+
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:.86rem}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-family:var(--mono);overflow-wrap:anywhere;font-variant-numeric:tabular-nums;font-size:.8rem}
+
+.foundry{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:40px;align-items:start}
+.panel{padding:clamp(22px,3vw,32px);display:grid;gap:18px;min-width:0}
+.panel h3{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.prims{display:grid;gap:8px}
+.prim{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:12px 14px;border:1px solid var(--line);border-radius:18px;cursor:pointer;background:rgba(255,255,255,.6)}
+.prim:has(input:checked){border-color:rgba(10,91,255,.45);background:#fff;box-shadow:0 8px 24px rgba(10,91,255,.08)}
+.prim input{margin:5px 0 0;accent-color:var(--blue)}
+.prim .t{font-weight:600;font-size:.93rem}.prim .d{color:var(--muted);font-size:.84rem}.prim .f{font-family:var(--mono);font-size:.64rem;color:var(--blue);margin-top:4px}
+.tiles{display:flex;gap:4px;flex-wrap:wrap}
+.tiles i{width:26px;height:26px;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;font:500 .6rem var(--mono);color:var(--dim);background:#fff}
+.tiles i.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.tiles i.hit{box-shadow:0 0 0 2px var(--good)}
+.meter{height:6px;background:var(--bg2);border-radius:3px;overflow:hidden}
+.meter span{display:block;height:100%;background:var(--blue);width:0}
+.result{border:1px dashed var(--line);border-radius:18px;padding:14px 16px;display:grid;gap:8px;font-size:.86rem;background:rgba(255,255,255,.6)}
+.result.found{border-style:solid;border-color:var(--good)}
+.copy{font:500 .7rem var(--body);padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);cursor:pointer}
+.copy:hover{color:var(--fg)}
+.label{display:grid;gap:8px;font-size:.9rem}
+.label .k{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.label ul{margin:0;padding-left:18px;color:var(--muted)}
+
+.pill{font-size:.68rem;padding:4px 10px;border-radius:999px;border:1px solid var(--line);letter-spacing:.06em;white-space:nowrap;text-transform:uppercase;background:#fff}
+.pill.live{color:var(--good);border-color:rgba(31,154,98,.4)}.pill.soon{color:var(--warn);border-color:rgba(183,121,31,.4)}.pill.no{color:var(--muted)}
+
+.fab{position:fixed;left:0;right:0;bottom:0;z-index:8;display:flex;justify-content:space-between;align-items:center;gap:12px;pointer-events:none;padding:0 max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.fab>*{pointer-events:auto}
+.fab .grp{display:flex;gap:10px}
+.fab .primary{padding:16px 36px;font-size:1rem}
+footer{padding-block:32px 110px;color:var(--muted);font-size:.86rem;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+
+@media (max-width:980px){.hero,.foundry,.merkle{grid-template-columns:1fr}.reader{min-height:0}}
+@media (max-width:640px){:root{--r:28px}.decoder{grid-template-columns:1fr}.decoder svg{max-width:150px;margin:0 auto}nav ul{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<div class="wrap navwrap">
+  <nav>
+    <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M14 3v9a5 5 0 0 1-10 0v-1"/><path d="M4 11l-2 2M4 11l2 2"/><circle cx="14" cy="3" r="1.4" fill="var(--blue)"/></svg>NEO</div>
+    <ul><li><a href="#foundry">Foundry</a></li></ul>
+    <span class="chip"><i></i><span>Robinhood Chain</span><b>4663</b></span>
+  </nav>
+</div>
+
+<section class="wrap hero">
+  <div class="card intro">
+    <span class="ulabel">About the project</span>
+    <h1>The stock's rulebook, as a hook.</h1>
+    <p class="lede"><mark>NEO is a corporate-action oracle and hook foundry</mark> for Uniswap v4 on Robinhood Chain. Tokenized stocks split, pay dividends, get halted and change symbols, and <mark class="plum">no pool on the chain knows any of that.</mark> NEO writes those events on-chain as the Tape and ships <mark class="sage">the hooks that read it.</mark></p>
+    <div class="cta"><a class="btn primary" href="#foundry">Forge a hook</a></div>
+    <p class="sub">keccak-256, CREATE2 and Merkle proofs computed in your browser · no token · chain 4663</p>
+  </div>
+  <div class="deep reader" aria-label="Hook address decoder">
+    <span class="tagf" style="left:8%;top:9%">Hook reader</span>
+    <span class="tagf" style="right:8%;top:14%" id="tag-count">—</span>
+    <div class="top"><span>Paste any v4 hook</span><span id="dec-mask">mask 0x0000</span></div>
+    <div class="decoder">
+      <svg id="hook" viewBox="0 0 200 300" aria-hidden="true">
+        <path id="shank" d="M120 18 V150 A58 58 0 1 1 20 190" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="120" cy="18" r="12" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="7"/>
+        <g id="barbs"></g>
+        <path d="M20 190 L12 170" stroke="#e9f0ff" stroke-width="7" stroke-linecap="round"/>
+      </svg>
+      <div class="flags" id="flags"></div>
+    </div>
+    <input class="addr" id="addr" type="text" spellcheck="false" autocomplete="off" value="0x3c9e1f0a7b8d2c4e5f6071829304a5b6c7d980c8" aria-label="Hook address">
+    <div class="hint"><span id="dec-note">Example address. Reads 3 of 14 flags.</span><span id="dec-valid" class="ok">valid 20-byte address</span></div>
+  </div>
+</section>
+
+<section class="band wrap" id="foundry">
+  <div class="head">
+    <span class="kicker">The foundry</span>
+    <h2>Pick the hooks. NEO mines the address allowed to run them</h2>
+    <p class="lede">A v4 hook's permissions live in the <mark>lowest fourteen bits of its address</mark>. The miner runs real keccak-256 here, then hands the address to the reader above. Fee split fixed at forge time: 80% LPs · 15% treasury · 5% poster.</p>
+  </div>
+  <div class="foundry">
+    <div class="card panel">
+      <h3>Compose <span class="mono" style="font-size:.7rem;color:var(--muted)" id="prim-count">2 selected</span></h3>
+      <div class="prims" id="prims"></div>
+    </div>
+    <div class="card panel">
+      <dl class="kv"><dt>Deployer</dt><dd id="deployer">0x0E00E00E00E00E00E00E00E00E00E00E00E00E00</dd><dt>Init-code hash</dt><dd id="ich">—</dd><dt>Target mask</dt><dd id="mask-hex">0x0000</dd></dl>
+      <div class="tiles" id="tiles"></div>
+      <div class="cta"><button class="btn primary" id="mine">Mine the address</button><button class="btn" id="stop" disabled>Stop</button></div>
+      <div class="meter"><span id="meter"></span></div>
+      <div class="result" id="result"><span class="mono" style="color:var(--muted)" id="r-status">Idle. Expected 16 384 tries.</span></div>
+      <div class="label" style="padding:0"><span class="k">Plain-words label · label() on the hook</span><ul id="label-list"></ul></div>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap" style="padding-top:8px"><span>NEO · concept, nothing deployed or audited · not affiliated with Robinhood or Uniswap</span><span class="mono" style="font-size:.78rem">chain 4663 · 14 bits · one Tape</span></footer>
+
+<div class="fab" aria-label="Quick actions">
+  <div class="grp"></div>
+  <a class="btn primary" href="#foundry">Forge a hook</a>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const NS='http://www.w3.org/2000/svg';
+  const hex=(n,w)=>'0x'+n.toString(16).padStart(w,'0');
+
+  /* ================= decoder ================= */
+  const FLAGS=[[13,'BEFORE_INITIALIZE','runs before a pool is created under it'],[12,'AFTER_INITIALIZE','runs after a pool is created under it'],[11,'BEFORE_ADD_LIQUIDITY','can refuse or shape a deposit'],[10,'AFTER_ADD_LIQUIDITY','sees every deposit after it lands'],[9,'BEFORE_REMOVE_LIQUIDITY','can refuse or shape a withdrawal'],[8,'AFTER_REMOVE_LIQUIDITY','sees every withdrawal after it lands'],[7,'BEFORE_SWAP','runs before every swap'],[6,'AFTER_SWAP','runs after every swap'],[5,'BEFORE_DONATE','runs before a donation to LPs'],[4,'AFTER_DONATE','runs after a donation to LPs'],[3,'BEFORE_SWAP_RETURNS_DELTA','can take or add tokens before a swap'],[2,'AFTER_SWAP_RETURNS_DELTA','can take or add tokens after a swap'],[1,'AFTER_ADD_LIQUIDITY_RETURNS_DELTA','can adjust what a deposit settles'],[0,'AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA','can adjust what a withdrawal settles']];
+  const ON='#e9f0ff', OFF='rgba(255,255,255,.3)';
+  const flagsEl=$('flags');
+  FLAGS.forEach(([b,n,d])=>{ const el=document.createElement('div'); el.className='flag'; el.id='f'+b; el.title=d; el.innerHTML=`<b>${String(b).padStart(2,' ')}</b><span>${n}</span><span class="bit">1&lt;&lt;${b}</span>`; flagsEl.appendChild(el); });
+  const shank=$('shank'), barbs=$('barbs'); const L=shank.getTotalLength();
+  FLAGS.forEach((f,i)=>{ const t=.30+(i/13)*.66; const p=shank.getPointAtLength(L*t), q=shank.getPointAtLength(L*Math.min(1,t+.004)); const ang=Math.atan2(q.y-p.y,q.x-p.x); const nx=Math.cos(ang+Math.PI/2), ny=Math.sin(ang+Math.PI/2);
+    const ln=document.createElementNS(NS,'line'); ln.setAttribute('x1',p.x-nx*4); ln.setAttribute('y1',p.y-ny*4); ln.setAttribute('x2',p.x-nx*22); ln.setAttribute('y2',p.y-ny*22); ln.setAttribute('stroke',OFF); ln.setAttribute('stroke-width','4'); ln.setAttribute('stroke-linecap','round'); ln.id='b'+f[0]; barbs.appendChild(ln); });
+  function draw(mask){ FLAGS.forEach(([b])=>{ const on=!!(mask>>b&1); $('f'+b).classList.toggle('on',on); const ln=$('b'+b); ln.setAttribute('stroke',on?ON:OFF); ln.setAttribute('stroke-width',on?'6':'4'); }); $('dec-mask').textContent='mask '+hex(mask,4); }
+  const EXAMPLE='0x3c9e1f0a7b8d2c4e5f6071829304a5b6c7d980c8';
+  function decode(){ const v=$('addr').value.trim(); const ok=/^0x[0-9a-fA-F]{40}$/.test(v);
+    $('dec-valid').textContent=ok?'valid 20-byte address':'needs 0x + 40 hex characters'; $('dec-valid').className=ok?'ok':'bad';
+    if(!ok){ draw(0); $('dec-note').textContent='Waiting for a full address.'; $('tag-count').textContent='—'; return; }
+    const mask=parseInt(v.slice(-4),16)&0x3fff; draw(mask); const c=FLAGS.filter(([b])=>mask>>b&1).length;
+    $('dec-note').textContent=(v.toLowerCase()===EXAMPLE?'Example address. ':'')+`Reads ${c} of 14 flags.`; $('tag-count').textContent=c+' of 14 flags'; }
+  $('addr').addEventListener('input',decode); decode();
+
+  /* ================= foundry ================= */
+  const PRIMS=[
+    {id:'halt',t:'Corporate-action halt',d:'Pauses swaps and liquidity across a split, and while halted.',bits:[7,11,9],on:true},
+    {id:'div',t:'Dividend pass-through',d:'Donates the cash dividend to in-range LPs on pay date.',bits:[5,6],on:true},
+    {id:'luld',t:'Limit up / limit down',d:'Caps the per-swap move from the reference price.',bits:[7,3]},
+    {id:'gate',t:'Eligibility gate',d:'Only cleared wallets may swap or add liquidity.',bits:[7,11]},
+    {id:'anchor',t:'Reference anchor',d:'Fee rises with deviation from the oracle print; re-based on splits.',bits:[12,7,6]},
+    {id:'vol',t:'Volatility fee',d:'Fee follows realised volatility and steps up after any Tape event.',bits:[7,6]},
+  ];
+  const primsEl=$('prims');
+  PRIMS.forEach(p=>{ const l=document.createElement('label'); l.className='prim'; l.innerHTML=`<input type="checkbox" id="p-${p.id}" ${p.on?'checked':''}><div><div class="t">${p.t}</div><div class="d">${p.d}</div><div class="f">${p.bits.map(b=>FLAGS.find(f=>f[0]===b)[1]).join(' · ')}</div></div>`; primsEl.appendChild(l); l.querySelector('input').addEventListener('change',update); });
+  const tilesEl=$('tiles'); for(let b=13;b>=0;b--){ const i=document.createElement('i'); i.id='t'+b; i.textContent=b; tilesEl.appendChild(i); }
+  let mask=0, ich='', mining=false, found=null, salt=0, tries=0, t0=0;
+  function selected(){ return PRIMS.filter(p=>$('p-'+p.id).checked); }
+  function update(){ const sl=selected(); mask=0; sl.forEach(p=>p.bits.forEach(b=>mask|=1<<b));
+    $('prim-count').textContent=sl.length+' selected'; $('mask-hex').textContent=hex(mask,4);
+    for(let b=0;b<14;b++) $('t'+b).className=(mask>>b&1)?'on':'';
+    ich=sl.length?'0x'+sha3.keccak_256('neo-v0:'+sl.map(p=>p.id).sort().join('+')):'—'; $('ich').textContent=ich;
+    $('label-list').innerHTML=sl.length? sl.flatMap(p=>p.bits).filter((b,i,a)=>a.indexOf(b)===i).sort((a,b)=>b-a).map(b=>`<li>This hook ${FLAGS.find(f=>f[0]===b)[2]}.</li>`).join('')+'<li>It reads the Tape for corporate actions. It cannot do anything else; the address proves it.</li>' : '<li>No primitives selected: this hook could do nothing.</li>';
+    stopMining(); found=null; $('result').className='result'; $('result').innerHTML='<span class="mono" style="color:var(--muted)" id="r-status">'+(sl.length?'Ready. Target '+hex(mask,4)+' · expected 16 384 tries.':'Pick at least one primitive.')+'</span>'; $('meter').style.width='0'; $('mine').disabled=!sl.length; }
+  function create2(dep,saltHex,ichHex){ const bytes=new Uint8Array(85); bytes[0]=0xff; const put=(h,off)=>{ for(let i=0;i<h.length/2;i++) bytes[off+i]=parseInt(h.substr(i*2,2),16); }; put(dep.slice(2),1); put(saltHex,21); put(ichHex.slice(2),53); return '0x'+sha3.keccak_256(bytes).slice(24); }
+  function stopMining(){ mining=false; $('mine').disabled=!selected().length; $('stop').disabled=true; }
+  function tick(){ if(!mining) return; const dep=$('deployer').textContent;
+    for(let i=0;i<400;i++){ const sh=salt.toString(16).padStart(64,'0'); const a=create2(dep,sh,ich); tries++; if((parseInt(a.slice(-4),16)&0x3fff)===mask){ found={salt:sh,addr:a}; break; } salt++; }
+    $('meter').style.width=Math.min(100,tries/16384*100)+'%';
+    if(found){ const ms=performance.now()-t0; stopMining(); $('result').className='result found';
+      $('result').innerHTML=`<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span class="mono" style="color:var(--good)">Found after ${tries.toLocaleString()} tries · ${(ms/1000).toFixed(2)} s</span><button class="copy" id="cp">Copy address</button></div><dl class="kv"><dt>Hook address</dt><dd>${found.addr}</dd><dt>Salt</dt><dd>0x${found.salt}</dd><dt>Low 14 bits</dt><dd>${hex(parseInt(found.addr.slice(-4),16)&0x3fff,4)} = target</dd></dl><p class="sub">Sent to the reader in the hero.</p>`;
+      $('cp').onclick=async()=>{ try{ await navigator.clipboard.writeText(found.addr); $('cp').textContent='Copied'; }catch(e){ $('cp').textContent='Select to copy'; } };
+      $('addr').value=found.addr; decode(); for(let b=0;b<14;b++) $('t'+b).classList.toggle('hit',!!(mask>>b&1)); return; }
+    $('r-status').textContent=`Mining… ${tries.toLocaleString()} tries · salt ${salt}`; setTimeout(tick,0); }
+  $('mine').onclick=()=>{ if(!selected().length) return; mining=true; found=null; salt=Math.floor(Math.random()*1e9); tries=0; t0=performance.now(); $('mine').disabled=true; $('stop').disabled=false; $('result').className='result'; $('result').innerHTML='<span class="mono" style="color:var(--muted)" id="r-status">Mining…</span>'; for(let b=0;b<14;b++) $('t'+b).classList.remove('hit'); tick(); };
+  $('stop').onclick=()=>{ stopMining(); $('result').innerHTML=`<span class="mono" style="color:var(--muted)" id="r-status">Stopped after ${tries.toLocaleString()} tries.</span>`; };
+  update();
+})();
+</script>
