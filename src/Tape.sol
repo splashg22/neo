@@ -36,6 +36,7 @@ contract Tape is ITape, EIP712 {
     mapping(bytes32 symbol => bool) internal _halted;
     mapping(bytes32 symbol => Action) internal _latest;
     mapping(bytes32 symbol => mapping(uint64 nonce => bool)) public nonceUsed;
+    mapping(bytes32 symbol => bytes32[]) internal _eventsOf;
 
     IncrementalMerkle.Tree internal _tree;
 
@@ -88,6 +89,14 @@ contract Tape is ITape, EIP712 {
         return _pending[id];
     }
 
+    function eventsOf(bytes32 symbol) external view returns (bytes32[] memory) {
+        return _eventsOf[symbol];
+    }
+
+    function hasAttester(bytes32 symbol) external view returns (bool) {
+        return attesterOf[symbol] != address(0);
+    }
+
     function leafOf(Event calldata e) public pure returns (bytes32) {
         return keccak256(abi.encode(e.symbol, e.kind, e.effective, e.value, e.nonce));
     }
@@ -120,6 +129,7 @@ contract Tape is ITape, EIP712 {
         p.poster = msg.sender;
         p.postedAt = uint64(block.timestamp);
         p.status = Status.Pending;
+        _eventsOf[e.symbol].push(id);
         emit Posted(id, e.symbol, e.kind, msg.sender);
     }
 

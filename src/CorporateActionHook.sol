@@ -27,6 +27,13 @@ contract CorporateActionHook is BaseHook {
     /// @dev hash of the (kind, effective, value) the operator last acknowledged for this pool
     mapping(PoolId => bytes32) public acknowledged;
 
+    /// @notice Tri-state answer to "can this pool trade right now?". Unknown is never Ok.
+    enum TradeStatus {
+        Unknown, // bound to a symbol the Tape has no attester for: no data source
+        Ok, // nothing on the Tape blocks trading
+        Refused // halted, or a split/rename is in effect and not yet acknowledged
+    }
+
     event Bound(PoolId indexed poolId, bytes32 symbol, address operator);
     event Acknowledged(PoolId indexed poolId, bytes32 actionHash);
 
@@ -83,6 +90,31 @@ contract CorporateActionHook is BaseHook {
         bytes32 h = keccak256(abi.encode(kind, effective, value));
         acknowledged[id] = h;
         emit Acknowledged(id, h);
+    }
+
+    // ------------------------------------------------------------------ status
+
+    /// @notice What a swap would meet right now, without sending one.
+    /// @return status  Unknown / Ok / Refused
+    /// @return reason  "unbound" | "no-attester" | "halted" | "awaiting-ack" | "ok"
+    /// @return effective  for Refused by a corporate action: when it took effect; otherwise 0
+    function tradeStatus(PoolKey calldata key)
+        external
+        view
+        returns (TradeStatus status, bytes32 reason, uint64 effective)
+    {
+        PoolId id = key.toId();
+        bytes32 sym = symbolOf[id];
+        if (sym == bytes32(0)) return (TradeStatus.Ok, "unbound", 0);
+        if (!tape.hasAttester(sym)) return (TradeStatus.Unknown, "no-attester", 0);
+        if (tape.isHalted(sym)) return (TradeStatus.Refused, "halted", 0);
+        (ITape.Kind kind, uint64 eff, uint256 value) = tape.action(sym);
+        if ((kind == ITape.Kind.Split || kind == ITape.Kind.Rename) && block.timestamp >= eff) {
+            if (acknowledged[id] != keccak256(abi.encode(kind, eff, value))) {
+                return (TradeStatus.Refused, "awaiting-ack", eff);
+            }
+        }
+        return (TradeStatus.Ok, "ok", 0);
     }
 
     // ------------------------------------------------------------------ hooks

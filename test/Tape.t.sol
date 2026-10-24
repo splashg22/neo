@@ -264,4 +264,27 @@ contract TapeTest is Test {
             index >>= 1;
         }
     }
+
+    // ------------------------------------------------------------------ calendar index
+
+    function test_eventsOf_recordsEveryPostInOrder() public {
+        ITape.Event memory a = _ev(ITape.Kind.Dividend, uint64(vm.getBlockTimestamp() + 1 days), 24, 1);
+        ITape.Event memory b = _ev(ITape.Kind.Split, uint64(vm.getBlockTimestamp() + 9 days), 40_000, 2);
+        bytes32 ia = _post(a);
+        bytes32 ib = _post(b);
+        bytes32[] memory ids = tape.eventsOf(ALFA);
+        assertEq(ids.length, 2);
+        assertEq(ids[0], ia);
+        assertEq(ids[1], ib);
+        assertEq(tape.eventsOf(bytes32("OTHER")).length, 0);
+        assertTrue(tape.hasAttester(ALFA));
+        assertFalse(tape.hasAttester(bytes32("OTHER")));
+        // rejected events stay in the index with their status, so a calendar can show them struck through
+        vm.prank(challenger);
+        tape.challenge{value: CHALLENGE_BOND}(ib);
+        vm.prank(reviewer);
+        tape.resolve(ib, false);
+        assertEq(tape.eventsOf(ALFA).length, 2);
+        assertEq(uint8(tape.pending(ib).status), uint8(ITape.Status.Rejected));
+    }
 }

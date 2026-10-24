@@ -157,4 +157,66 @@ contract CorporateActionHookTest is Test, Deployers {
     function test_labelIsReadable() public view {
         assertGt(bytes(hook.label()).length, 40);
     }
+
+    // ------------------------------------------------------------------ tradeStatus
+
+    function _status() internal view returns (CorporateActionHook.TradeStatus st, bytes32 reason, uint64 eff) {
+        return hook.tradeStatus(poolKey);
+    }
+
+    function test_status_okWhenNothingHappened() public view {
+        (CorporateActionHook.TradeStatus st, bytes32 r,) = _status();
+        assertEq(uint8(st), uint8(CorporateActionHook.TradeStatus.Ok));
+        assertEq(r, bytes32("ok"));
+    }
+
+    function test_status_refusedWhileHalted_thenOk() public {
+        _finalize(ITape.Kind.Halt, uint64(vm.getBlockTimestamp()), 1, 1);
+        (CorporateActionHook.TradeStatus st, bytes32 r,) = _status();
+        assertEq(uint8(st), uint8(CorporateActionHook.TradeStatus.Refused));
+        assertEq(r, bytes32("halted"));
+        _finalize(ITape.Kind.Halt, uint64(vm.getBlockTimestamp()), 0, 2);
+        (st,,) = _status();
+        assertEq(uint8(st), uint8(CorporateActionHook.TradeStatus.Ok));
+    }
+
+    function test_status_refusedAwaitingAck_untilAcknowledged() public {
+        uint64 eff = uint64(vm.getBlockTimestamp() + 3 days);
+        _finalize(ITape.Kind.Split, eff, 40_000, 1);
+        (CorporateActionHook.TradeStatus st,,) = _status();
+        assertEq(uint8(st), uint8(CorporateActionHook.TradeStatus.Ok), "not yet effective");
+        vm.warp(eff);
+        bytes32 r; uint64 e;
+        (st, r, e) = _status();
+        assertEq(uint8(st), uint8(CorporateActionHook.TradeStatus.Refused));
+        assertEq(r, bytes32("awaiting-ack"));
+        assertEq(e, eff);
+        vm.prank(operator);
+        hook.acknowledge(poolKey);
+        (st,,) = _status();
+        assertEq(uint8(st), uint8(CorporateActionHook.TradeStatus.Ok));
+    }
+
+    function test_status_unknownWithoutAttester() public {
+        (PoolKey memory k,) = initPool(currency0, currency1, IHooks(address(hook)), 500, SQRT_PRICE_1_1);
+        hook.bind(k, bytes32("NOATT"));
+        (CorporateActionHook.TradeStatus st, bytes32 r,) = hook.tradeStatus(k);
+        assertEq(uint8(st), uint8(CorporateActionHook.TradeStatus.Unknown));
+        assertEq(r, bytes32("no-attester"));
+    }
+
+    function test_status_unboundIsOk() public {
+        (PoolKey memory k,) = initPool(currency0, currency1, IHooks(address(hook)), 500, SQRT_PRICE_1_1);
+        (CorporateActionHook.TradeStatus st, bytes32 r,) = hook.tradeStatus(k);
+        assertEq(uint8(st), uint8(CorporateActionHook.TradeStatus.Ok));
+        assertEq(r, bytes32("unbound"));
+    }
+
+    function test_statusMatchesSwapOutcome() public {
+        _finalize(ITape.Kind.Halt, uint64(vm.getBlockTimestamp()), 1, 1);
+        (CorporateActionHook.TradeStatus st,,) = _status();
+        assertEq(uint8(st), uint8(CorporateActionHook.TradeStatus.Refused));
+        _expectHookRevert(abi.encodeWithSelector(CorporateActionHook.Halted.selector, ALFA));
+        _swap();
+    }
 }

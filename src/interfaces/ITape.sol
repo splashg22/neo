@@ -44,6 +44,10 @@ interface ITape {
     function eventCount() external view returns (uint256);
     function leafOf(Event calldata e) external pure returns (bytes32);
     function verify(bytes32 leaf, uint256 index, bytes32[] calldata proof) external view returns (bool);
+    /// @notice Every event id ever posted for a symbol, in posting order (pending, challenged, finalized and rejected).
+    function eventsOf(bytes32 symbol) external view returns (bytes32[] memory);
+    /// @notice Whether the symbol has a data source at all: an attester is set.
+    function hasAttester(bytes32 symbol) external view returns (bool);
 
     // ---- lifecycle ----
     function post(Event calldata e, bytes calldata attesterSig) external payable returns (bytes32 id);

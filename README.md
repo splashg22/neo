@@ -9,9 +9,9 @@ Tokenized stocks split, pay dividends, get halted and change symbols. A v4 pool 
 | Contract | Role |
 | --- | --- |
 | `src/interfaces/ITape.sol` | The interface every hook imports: `isHalted`, `action`, `eventsRoot`, `verify`, plus the `post` / `challenge` / `finalize` / `resolve` lifecycle. |
-| `src/Tape.sol` | Attest, dispute, finalize. EIP-712 attester signatures per symbol, ETH bonds for poster and challenger, reviewer settles disputes, loser's bond pays the winner. Finalized events update `isHalted` / `action` and append a leaf. |
+| `src/Tape.sol` | Attest, dispute, finalize. EIP-712 attester signatures per symbol, ETH bonds for poster and challenger, reviewer settles disputes, loser's bond pays the winner. Finalized events update `isHalted` / `action` and append a leaf. `eventsOf(symbol)` indexes every posted event for calendars; `hasAttester(symbol)` says whether a data source exists. |
 | `src/libraries/IncrementalMerkle.sol` | Depth-20 append-only keccak tree (deposit-contract construction). Ordered sibling proofs. |
-| `src/CorporateActionHook.sol` | First NEO hook. Permissions `BEFORE_SWAP \| BEFORE_ADD_LIQUIDITY`. A pool bound to a symbol refuses swaps and new liquidity while halted, and from a split or rename's effective time until the pool operator `acknowledge`s it. Removing liquidity is never blocked. Exposes `label()`. |
+| `src/CorporateActionHook.sol` | First NEO hook. Permissions `BEFORE_SWAP \| BEFORE_ADD_LIQUIDITY`. A pool bound to a symbol refuses swaps and new liquidity while halted, and from a split or rename's effective time until the pool operator `acknowledge`s it. Removing liquidity is never blocked. Exposes `label()` and `tradeStatus(poolKey)` → `(Unknown \| Ok \| Refused, reason, effective)`. |
 
 ### Event kinds
 
@@ -40,7 +40,7 @@ forge test -vv
 
 `lib/v4-periphery` is pinned to `3779387e` (2025-11-05), the last commit that ships `src/utils/BaseHook.sol` and `HookMiner.sol`; later commits moved hooks to a separate repo. `v4-core` is resolved through v4-periphery's own submodule so the two always match. Also in the repo: `site/neo.html`, the concept page (publishable as a static page), and `site/research-wth-hookr.md`, notes on the two neighbouring projects on Robinhood Chain.
 
-Tests cover signature and bond checks, nonce replay, the dispute window, both resolve outcomes, on-chain Merkle root against a reference tree with proofs for every leaf (and forged/misindexed proofs failing), hook address mining, halt blocking swap and add-liquidity but not remove, split blocking until acknowledged, dividends never blocking, and unbound pools being inert.
+Tests (30) cover tradeStatus in every state, the per-symbol event index, signature and bond checks, nonce replay, the dispute window, both resolve outcomes, on-chain Merkle root against a reference tree with proofs for every leaf (and forged/misindexed proofs failing), hook address mining, halt blocking swap and add-liquidity but not remove, split blocking until acknowledged, dividends never blocking, and unbound pools being inert.
 
 ## Run it locally
 
@@ -56,6 +56,8 @@ The console (`app/index.html`, viem) is a working surface for every role:
 - **Post an event** — the attester signs the EIP-712 `Event` in their wallet; anyone posts it with the bond.
 - **Events** — every posted event with status and window countdown; challenge, finalize, and reviewer uphold/reject inline.
 - **Hook** — the sample pool's bound symbol, operator and acknowledgement; "Try a swap" / "Try adding liquidity" show exactly what the hook does under the current Tape state; operator acknowledge after a split.
+- **Can I trade now?** — `hook.tradeStatus(poolKey)` as a badge: **Ok**, **Refused** (halted, or a split/rename in effect and not acknowledged, with the effective time) or **Unknown** (the symbol has no attester, so no data source). Unknown is never Ok. Read before sending anything; the same view is what an MCP tool or router should call.
+- **Calendar** — every event ever posted for the symbol (`tape.eventsOf`), sorted by effective date: what it is, what it does to the pool, "in effect" or countdown, status, dispute-window countdown for open ones; rejected events stay in the list struck through.
 - **Decode any hook address** — the 14 permission bits.
 
 Use a browser wallet pointed at `127.0.0.1:8545` (chain 31337), or pick a Dev signer in the header: Anvil's well-known test accounts for reviewer, attester, pool operator and challenger. The dispute window is 45 seconds locally.
