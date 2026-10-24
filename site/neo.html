@@ -1,118 +1,122 @@
 <title>NEO</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: black ground, hairline grid, centred light display, one mint accent. A headline, a paragraph, two buttons, three rows. Single dark theme by design. */
+/* Layout: institutional light. Warm off-white ground, near-black type, grey second clauses, hairline rules, mono bracket numbering, black rectangular buttons, a fine-line tape drawing in the hero. Single light theme by design. */
 :root{
-  --bg:#000;--fg:#fff;--muted:#9a9a9a;--dim:#5e5e5e;--line:rgba(255,255,255,.18);--line2:rgba(255,255,255,.34);
-  --accent:#00ec97;--accent-ink:#00130c;
-  --body:"Hanken Grotesk",system-ui,-apple-system,sans-serif;
+  --bg:#faf9f6;--fg:#141414;--muted:#7a7a78;--dim:#a9a8a4;--line:rgba(20,20,20,.12);--line2:rgba(20,20,20,.3);
+  --ink:#141414;--ink-fg:#faf9f6;--ok:#1f7a4d;--bad:#b4362f;
+  --body:"Instrument Sans",system-ui,-apple-system,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
-  color-scheme:dark;
+  color-scheme:light;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.6 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-h1,h2,h3{margin:0;text-wrap:balance;line-height:1.05;font-weight:300;letter-spacing:-.02em}
-h1{font-size:clamp(2.8rem,7.5vw,5.6rem);text-align:center}
-h2{font-size:clamp(1.8rem,3.4vw,2.6rem);text-align:center}
-h3{font-size:1.35rem;font-weight:400;letter-spacing:-.01em}
+h1,h2,h3{margin:0;text-wrap:balance;line-height:1.08;font-weight:400;letter-spacing:-.025em}
+h1{font-size:clamp(2.4rem,5.6vw,4.4rem);text-align:center}
+h2{font-size:clamp(1.9rem,3.8vw,3rem)}
+h3{font-size:1.35rem;letter-spacing:-.015em}
+h1 span,h2 span{color:var(--muted)}
 p{margin:0}a{color:inherit}
 .wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.n{font-family:var(--mono);font-size:.78rem;color:var(--muted);letter-spacing:.04em}
 
-nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);border-bottom:1px solid var(--line);display:flex;align-items:stretch;height:56px}
-.logo{font-weight:500;letter-spacing:.12em;font-size:1rem;display:flex;align-items:center;padding:0 22px;border-right:1px solid var(--line)}
-nav ul{list-style:none;display:flex;margin:0;padding:0;font-size:.9rem}
-nav ul a{text-decoration:none;display:flex;align-items:center;height:100%;padding:0 22px;border-right:1px solid var(--line)}
-nav ul a:hover,nav ul a:focus-visible{color:var(--accent)}
-.chip{font-size:.8rem;padding:0 22px;display:inline-flex;gap:8px;align-items:center;color:var(--muted);white-space:nowrap;margin-left:auto;border-left:1px solid var(--line)}
-.chip i{width:7px;height:7px;border-radius:50%;background:var(--accent)}
-.chip b{color:var(--fg);font-weight:500}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);display:flex;align-items:center;justify-content:space-between;height:72px}
+.logo{display:flex;align-items:center;gap:12px;font-weight:500;letter-spacing:.1em;font-size:1rem;text-decoration:none}
+.logo i{display:block;width:26px;height:26px;border-radius:50%;background:var(--ink);position:relative}
+.logo i::after{content:"";position:absolute;left:11px;top:4px;width:4px;height:18px;background:var(--bg)}
+nav ul{list-style:none;display:flex;gap:28px;margin:0;padding:0;font-size:.95rem}
+nav ul a{text-decoration:none;color:var(--muted)}
+nav ul a:hover,nav ul a:focus-visible{color:var(--fg)}
 
-.hero{display:grid;gap:26px;padding:clamp(72px,11vw,150px) 0 clamp(56px,8vw,110px);justify-items:center;text-align:center}
-.lede{color:var(--muted);max-width:66ch;font-size:1.02rem;line-height:1.7;text-align:center}
-.cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
-.btn{font:500 .92rem var(--body);padding:12px 20px;border-radius:6px;border:1px solid var(--line2);background:transparent;color:var(--fg);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:10px}
-.btn:hover{border-color:var(--fg)}
-.btn.primary{background:var(--fg);color:#000;border-color:var(--fg)}
-.btn.primary::before{content:"";width:16px;height:16px;border-radius:3px;background:#000;display:inline-block}
-.btn.primary:hover{background:#e8e8e8}
-.btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.hero{position:relative;padding:clamp(56px,9vw,120px) 0 clamp(56px,9vw,120px);display:grid;gap:26px;justify-items:center;text-align:center}
+.hero svg{position:absolute;inset:0;width:100%;height:100%;z-index:-1;display:block}
+.lede{color:var(--muted);max-width:60ch;font-size:1.1rem;line-height:1.65;text-align:center}
+.cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.btn{font:500 .95rem var(--body);padding:13px 22px;border-radius:4px;border:1px solid var(--ink);background:var(--ink);color:var(--ink-fg);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.btn:hover{background:#2a2a2a}
+.btn.ghost{background:transparent;color:var(--fg);border-color:var(--line2)}
+.btn.ghost:hover{border-color:var(--ink);background:transparent}
+.btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 
-.stack{border-top:1px solid var(--line)}
-.stack h2{padding:clamp(40px,6vw,72px) 0;border-bottom:1px solid var(--line)}
-.row{display:grid;grid-template-columns:minmax(0,380px) 1fr;gap:clamp(32px,6vw,96px);padding:clamp(48px,7vw,96px) 0;border-bottom:1px solid var(--line)}
-.row:last-child{border-bottom:0}
+.sec{padding:clamp(56px,8vw,104px) 0 0}
+.sec h2{padding-bottom:clamp(28px,4vw,44px);border-bottom:1px solid var(--line)}
+.row{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(28px,6vw,96px);padding:clamp(40px,6vw,72px) 0;border-bottom:1px solid var(--line)}
 .row .t{display:grid;gap:18px;align-content:start}
-.row .t h3::after{content:"";display:block;height:1px;background:var(--line);margin-top:18px}
-.row .t p{color:var(--muted);font-size:.95rem;line-height:1.7}
-.row .t a{font-size:.95rem;text-decoration:none;border-bottom:1px solid var(--line2);padding-bottom:3px;width:max-content}
-.row .t a::after{content:" ↗";color:var(--muted)}
-.row .t a:hover{border-color:var(--fg)}
-.row .b{display:grid;gap:14px;align-content:start;min-width:0}
+.row .t header{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.row .t p{color:var(--muted);font-size:1.02rem;line-height:1.65}
+.row .t .btn{width:max-content;margin-top:4px}
+.row .b{display:grid;align-content:start;min-width:0}
 
-/* decoder strip */
-.dec{border:1px solid var(--line)}
-.dec input{font:500 .92rem var(--mono);background:transparent;color:var(--fg);border:0;border-bottom:1px solid var(--line);padding:16px 18px;width:100%}
-.dec input:focus-visible{outline:none;border-bottom-color:var(--accent)}
-.tiles{display:grid;grid-template-columns:repeat(14,1fr)}
-.tiles i{height:44px;border-right:1px solid var(--line);display:grid;place-items:center;font:500 .66rem var(--mono);color:var(--dim)}
-.tiles i:last-child{border-right:0}
-.tiles i.on{background:var(--accent);color:var(--accent-ink)}
-.dec .f{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:.72rem;color:var(--dim)}
-.dec .f b{color:var(--fg);font-weight:500}
-.dec .f .bad{color:#ff6b6b}
 .list{display:grid}
-.list div{display:grid;grid-template-columns:1fr auto;gap:16px;padding:14px 0;border-bottom:1px solid var(--line);font-size:.95rem}
+.list div{display:grid;grid-template-columns:1fr auto;gap:16px;padding:16px 0;border-bottom:1px solid var(--line);align-items:center}
+.list div:first-child{padding-top:0}
 .list div:last-child{border-bottom:0}
-.list div span:last-child{font-family:var(--mono);font-size:.72rem;color:var(--muted);white-space:nowrap;align-self:center}
-.list div span:first-child b{font-weight:500;display:block}
-.list div span:first-child small{color:var(--muted);font-size:.86rem}
-.tag{font-size:.7rem;padding:4px 10px;border-radius:6px;border:1px solid var(--accent);color:var(--accent);letter-spacing:.06em;text-transform:uppercase;height:max-content}
+.list b{font-weight:500;display:block}
+.list small{color:var(--muted);font-size:.9rem}
+.list .n{white-space:nowrap}
 
-footer{padding:28px 0 40px;color:var(--dim);font-size:.82rem;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line)}
+.dec{border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#fff}
+.dec input{font:500 .95rem var(--mono);background:transparent;color:var(--fg);border:0;border-bottom:1px solid var(--line);padding:16px 18px;width:100%}
+.dec input:focus-visible{outline:none;border-bottom-color:var(--ink)}
+.tiles{display:grid;grid-template-columns:repeat(14,1fr)}
+.tiles i{height:46px;border-right:1px solid var(--line);display:grid;place-items:center;font:500 .68rem var(--mono);color:var(--dim)}
+.tiles i:last-child{border-right:0}
+.tiles i.on{background:var(--ink);color:var(--ink-fg)}
+.dec .f{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--line);font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.dec .f b{color:var(--fg);font-weight:500}
+.dec .f .ok{color:var(--ok)}.dec .f .bad{color:var(--bad)}
 
-@media (max-width:900px){.row{grid-template-columns:1fr}}
-@media (max-width:640px){nav ul{display:none}.tiles i{font-size:.55rem;height:36px}}
+.status{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);border-radius:4px;background:#fff}
+.status div{padding:22px 24px;border-right:1px solid var(--line);display:grid;gap:6px}
+.status div:last-child{border-right:0}
+.status .v{font-size:2rem;letter-spacing:-.03em;line-height:1}
+.status .k{color:var(--muted);font-size:.92rem}
+
+footer{padding:36px 0 48px;color:var(--muted);font-size:.86rem;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+
+@media (max-width:900px){.row{grid-template-columns:1fr}.status{grid-template-columns:1fr}.status div{border-right:0;border-bottom:1px solid var(--line)}.status div:last-child{border-bottom:0}}
+@media (max-width:640px){nav ul{display:none}.tiles i{font-size:.56rem;height:38px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 
-<nav>
-  <span class="logo">NEO</span>
+<nav class="wrap">
+  <a class="logo" href="#"><i></i>NEO</a>
   <ul><li><a href="#tape">Tape</a></li><li><a href="#hook">Hook</a></li><li><a href="#contracts">Contracts</a></li></ul>
-  <span class="chip"><i></i>Robinhood Chain <b>4663</b></span>
 </nav>
 
 <section class="wrap hero">
-  <h1>Corporate actions,<br>on-chain.</h1>
-  <p class="lede">NEO records splits, dividends, halts and symbol changes for tokenized equities on Robinhood Chain, and gives Uniswap v4 pools a hook that enforces them. One contract to read. One storage lookup in the swap path.</p>
-  <div class="cta"><a class="btn primary" href="#hook">Read a hook</a><a class="btn" href="#contracts">View contracts</a></div>
+  <svg id="tape-art" viewBox="0 0 1200 520" preserveAspectRatio="none" aria-hidden="true"></svg>
+  <h1>Corporate actions for tokenized equities,<br><span>recorded and enforced on-chain.</span></h1>
+  <p class="lede">NEO is the record of splits, dividends, halts and symbol changes for stock tokens on Robinhood Chain, and the Uniswap v4 hook that makes pools respect it.</p>
+  <div class="cta"><a class="btn" href="#hook">Read a hook</a><a class="btn ghost" href="#contracts">Contracts</a></div>
 </section>
 
-<section class="wrap stack">
-  <h2>The NEO stack</h2>
+<section class="wrap sec">
+  <h2>One record, <span>enforced where the trade happens.</span></h2>
 
   <div class="row" id="tape">
     <div class="t">
-      <h3>The Tape: the record every hook reads</h3>
-      <p>Each event is posted with the issuer's attester signature and a bond, held for a dispute window anyone can challenge, then finalized into plain storage and an append-only Merkle tree. Hooks call <span class="mono">isHalted()</span> and <span class="mono">action()</span>; nothing in the swap path waits on an oracle.</p>
-      <a href="#contracts">Interface</a>
+      <header><h3>The Tape</h3><span class="n">[01]</span></header>
+      <p>The on-chain record every NEO hook reads. An issuer's attester signs each event; anyone may post it with a bond, and anyone may challenge it during the dispute window. Finalized events become plain storage and a leaf in an append-only Merkle tree. A hook calls <span class="mono">isHalted()</span> or <span class="mono">action()</span>; nothing in the swap path waits on an oracle.</p>
+      <a class="btn ghost" href="#contracts">About the Tape</a>
     </div>
     <div class="b list">
-      <div><span><b>Split</b><small>new shares per old share, 1e4 scale</small></span><span>Kind.Split</span></div>
-      <div><span><b>Dividend</b><small>cash per share, quote-asset minor units</small></span><span>Kind.Dividend</span></div>
-      <div><span><b>Halt</b><small>on or off</small></span><span>Kind.Halt</span></div>
-      <div><span><b>Rename</b><small>new symbol</small></span><span>Kind.Rename</span></div>
+      <div><span><b>Split</b><small>New shares per old share, scaled 1e4.</small></span><span class="n">Kind.Split</span></div>
+      <div><span><b>Dividend</b><small>Cash per share in quote-asset minor units.</small></span><span class="n">Kind.Dividend</span></div>
+      <div><span><b>Halt</b><small>On or off.</small></span><span class="n">Kind.Halt</span></div>
+      <div><span><b>Rename</b><small>New symbol.</small></span><span class="n">Kind.Rename</span></div>
     </div>
   </div>
 
   <div class="row" id="hook">
     <div class="t">
-      <h3>CorporateActionHook: enforcement in the pool</h3>
-      <p>A pool bound to a symbol refuses swaps and new liquidity while the stock is halted, and from a split or rename's effective time until the pool operator acknowledges it. Removing liquidity is never blocked. Uniswap v4 reads a hook's permissions from the lowest fourteen bits of its address; paste any hook to read them.</p>
-      <a href="#contracts">Permissions</a>
+      <header><h3>CorporateActionHook</h3><span class="n">[02]</span></header>
+      <p>A pool bound to a symbol refuses swaps and new liquidity while the stock is halted, and from a split or rename's effective time until the pool operator acknowledges it. Removing liquidity is never blocked. Uniswap v4 reads a hook's permissions from the lowest fourteen bits of its address; enter any hook address to read them.</p>
+      <a class="btn ghost" href="#contracts">About the hook</a>
     </div>
     <div class="b">
       <div class="dec">
@@ -123,16 +127,16 @@ footer{padding:28px 0 40px;color:var(--dim);font-size:.82rem;display:flex;justif
     </div>
   </div>
 
-  <div class="row" id="contracts">
+  <div class="row" id="contracts" style="border-bottom:0">
     <div class="t">
-      <h3>Contracts and tests</h3>
-      <p>Solidity 0.8.26, Foundry. Twenty-three tests run against a live Uniswap v4 PoolManager: hook address derivation, halt and split enforcement in real swaps, the post, challenge and resolve lifecycle, and Merkle roots checked against a reference tree. Nothing is deployed or audited yet.</p>
-      <a href="#contracts">Source</a>
+      <header><h3>Contracts</h3><span class="n">[03]</span></header>
+      <p>Solidity 0.8.26 on Foundry. The suite runs against a live Uniswap v4 PoolManager: hook address derivation, halt and split enforcement in real swaps, the post, challenge and resolve lifecycle, and Merkle roots checked against a reference tree. Nothing is deployed or audited yet.</p>
+      <a class="btn ghost" href="#contracts">Source</a>
     </div>
-    <div class="b list">
-      <div><span><b>Tape</b><small>attest · challenge · finalize · Merkle</small></span><span class="tag">14 tests</span></div>
-      <div><span><b>CorporateActionHook</b><small>BEFORE_SWAP · BEFORE_ADD_LIQUIDITY</small></span><span class="tag">9 tests</span></div>
-      <div><span><b>IncrementalMerkle</b><small>depth 20 · ordered proofs</small></span><span>library</span></div>
+    <div class="b status">
+      <div><span class="v">3</span><span class="k">Contracts: Tape, CorporateActionHook, IncrementalMerkle</span></div>
+      <div><span class="v">23</span><span class="k">Tests passing against a live PoolManager</span></div>
+      <div><span class="v">0</span><span class="k">Deployments. Robinhood Chain, chain ID 4663, is the target</span></div>
     </div>
   </div>
 </section>
@@ -142,12 +146,28 @@ footer{padding:28px 0 40px;color:var(--dim);font-size:.82rem;display:flex;justif
 <script>
 (function(){
   const $=id=>document.getElementById(id);
+
+  // hero: a field of fine tape lines, each with one step where a corporate action lands
+  (function art(){
+    const svg=$('tape-art'); const NS='http://www.w3.org/2000/svg'; const W=1200,H=520; const n=26;
+    let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+    for(let i=0;i<n;i++){
+      const y=40+i*(H-80)/(n-1); const x=180+rnd()*840; const d=(rnd()-.5)*22;
+      const p=document.createElementNS(NS,'path');
+      p.setAttribute('d',`M0 ${y} H${x-18} C${x-6} ${y} ${x-6} ${y+d} ${x+6} ${y+d} H${W}`);
+      p.setAttribute('fill','none'); p.setAttribute('stroke','rgba(20,20,20,.16)'); p.setAttribute('stroke-width','1'); p.setAttribute('vector-effect','non-scaling-stroke');
+      svg.appendChild(p);
+      if(i%5===2){ const c=document.createElementNS(NS,'circle'); c.setAttribute('cx',x-6); c.setAttribute('cy',y+d/2); c.setAttribute('r','2.5'); c.setAttribute('fill','#141414'); svg.appendChild(c); }
+    }
+  })();
+
+  // decoder
   const NAMES=['BEFORE_INITIALIZE','AFTER_INITIALIZE','BEFORE_ADD_LIQUIDITY','AFTER_ADD_LIQUIDITY','BEFORE_REMOVE_LIQUIDITY','AFTER_REMOVE_LIQUIDITY','BEFORE_SWAP','AFTER_SWAP','BEFORE_DONATE','AFTER_DONATE','BEFORE_SWAP_RETURNS_DELTA','AFTER_SWAP_RETURNS_DELTA','AFTER_ADD_LIQUIDITY_RETURNS_DELTA','AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA'];
   const tiles=$('tiles');
   for(let b=13;b>=0;b--){ const i=document.createElement('i'); i.id='t'+b; i.textContent=b; i.title=NAMES[13-b]; tiles.appendChild(i); }
   function decode(){
     const v=$('addr').value.trim(); const ok=/^0x[0-9a-fA-F]{40}$/.test(v);
-    $('valid').textContent=ok?'valid address':'0x + 40 hex characters'; $('valid').className=ok?'':'bad';
+    $('valid').textContent=ok?'valid address':'0x + 40 hex characters'; $('valid').className=ok?'ok':'bad';
     if(!ok){ for(let b=0;b<14;b++) $('t'+b).className=''; $('note').textContent='—'; return; }
     const mask=parseInt(v.slice(-4),16)&0x3fff; const on=[];
     for(let b=13;b>=0;b--){ const s=!!(mask>>b&1); $('t'+b).className=s?'on':''; if(s) on.push(NAMES[13-b]); }
