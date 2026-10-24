@@ -60,6 +60,7 @@ table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:left
 <nav>
   <span class="brand">NEO <small>Console</small></span>
   <span class="acct">
+    <select id="chain" style="width:auto"></select>
     <span id="net" class="mono">—</span>
     <select id="signer" style="width:auto">
       <option value="injected">Browser wallet</option>
@@ -173,10 +174,19 @@ import { privateKeyToAccount } from 'https://esm.sh/viem@2.21.0/accounts';
 const $ = id => document.getElementById(id);
 const log = (m, cls='') => { const d=document.createElement('div'); d.className=cls; d.textContent=new Date().toLocaleTimeString()+'  '+m; $('log').prepend(d); };
 
-const D = await (await fetch('./deployments.local.json?'+Date.now())).json();
-const RPC = 'http://127.0.0.1:8545';
-const chain = { id: D.chainId, name: 'local', nativeCurrency:{name:'ETH',symbol:'ETH',decimals:18}, rpcUrls:{default:{http:[RPC]}} };
+const CHAINS = await (await fetch('./chains.json?'+Date.now())).json();
+const params = new URLSearchParams(location.search);
+let chainId = params.get('chain') || localStorage.getItem('neo-chain') || '31337';
+const sel = $('chain');
+for (const [id, c] of Object.entries(CHAINS)) { const o=document.createElement('option'); o.value=id; o.textContent=c.name+' · '+id; sel.appendChild(o); }
+sel.value = chainId; sel.onchange = () => { try{ localStorage.setItem('neo-chain', sel.value); }catch{} location.search = '?chain='+sel.value; };
+const C = CHAINS[chainId]; const RPC = C.rpc;
+let D;
+try { const r = await fetch('./'+C.deployments+'?'+Date.now()); if (!r.ok) throw 0; D = await r.json(); }
+catch { document.querySelector('.wrap').innerHTML = `<section class="card"><header><h2>${C.name}</h2><span class="n">chain ${chainId}</span></header><div class="body"><p>NEO is not deployed on this chain yet. The console needs <span class="mono">app/${C.deployments}</span>, written by <span class="mono">forge script script/Deploy.s.sol --rpc-url ${RPC} --broadcast</span>.</p>${C.faucet?`<p class="note">Testnet ETH: <a href="${C.faucet}">${C.faucet}</a></p>`:''}</div></section>`; throw new Error('no deployment for chain '+chainId); }
+const chain = { id: Number(chainId), name: C.name, nativeCurrency:{name:'ETH',symbol:'ETH',decimals:18}, rpcUrls:{default:{http:[RPC]}}, blockExplorers: C.explorer ? { default: { name:'explorer', url: C.explorer } } : undefined };
 const pub = createPublicClient({ chain, transport: http(RPC) });
+const explorer = (kind, v) => C.explorer ? `<a href="${C.explorer}/${kind}/${v}" target="_blank" rel="noopener">${v}</a>` : v;
 
 const TAPE_ABI = parseAbi([
   'function isHalted(bytes32) view returns (bool)',
@@ -216,13 +226,15 @@ const SWAP_ABI = parseAbi([
 const LP_ABI = parseAbi([
   'function modifyLiquidity((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key,(int24 tickLower,int24 tickUpper,int256 liquidityDelta,bytes32 salt) params,bytes hookData) payable returns (int256)',
 ]);
-const KEY = { currency0: D.token0, currency1: D.token1, fee: 3000, tickSpacing: 60, hooks: D.hook };
-const POOL_ID = keccak256(encodeAbiParameters([{type:'address'},{type:'address'},{type:'uint24'},{type:'int24'},{type:'address'}],[KEY.currency0,KEY.currency1,KEY.fee,KEY.tickSpacing,KEY.hooks]));
+const HAS_POOL = !!(D.token0 && D.token1);
+const KEY = HAS_POOL ? { currency0: D.token0, currency1: D.token1, fee: 3000, tickSpacing: 60, hooks: D.hook } : null;
+const POOL_ID = HAS_POOL ? keccak256(encodeAbiParameters([{type:'address'},{type:'address'},{type:'uint24'},{type:'int24'},{type:'address'}],[KEY.currency0,KEY.currency1,KEY.fee,KEY.tickSpacing,KEY.hooks])) : null;
 const KINDS = ['None','Split','Dividend','Halt','Rename'];
 const STATUS = ['Unknown','Pending','Challenged','Finalized','Rejected'];
 const b32 = s => stringToHex(s.slice(0,32), { size: 32 });
 const sym = h => { try { return hexToString(h, { size: 32 }).replace(/\0+$/,''); } catch { return h; } };
 const short = a => a ? a.slice(0,6)+'…'+a.slice(-4) : '—';
+// Anvil's published test keys; only offered on chain 31337
 const DEV_KEYS = { dev0:'0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80', dev1:'0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', dev2:'0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a', dev3:'0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6' };
 
 let wallet = null, account = null;
@@ -239,13 +251,14 @@ async function connect(){
   $('who').textContent = short(account); log('Connected '+account);
 }
 $('connect').onclick = connect;
+if (chainId !== '31337') { [...$('signer').options].forEach(o => { if (o.value.startsWith('dev')) o.remove(); }); }
 
 const tape = getContract({ address: D.tape, abi: TAPE_ABI, client: pub });
 const hook = getContract({ address: D.hook, abi: HOOK_ABI, client: pub });
 
 async function tx(fn){
   if (!wallet) { log('Connect a signer first.', 'bad'); return; }
-  try { const h = await fn(); log('tx '+h); const r = await pub.waitForTransactionReceipt({ hash: h }); log(r.status==='success'?'confirmed in block '+r.blockNumber:'reverted', r.status==='success'?'ok':'bad'); await refresh(); }
+  try { const h = await fn(); log('tx '+h); if (C.explorer) log(C.explorer+'/tx/'+h); const r = await pub.waitForTransactionReceipt({ hash: h }); log(r.status==='success'?'confirmed in block '+r.blockNumber:'reverted', r.status==='success'?'ok':'bad'); await refresh(); }
   catch (e) { log(explain(e), 'bad'); }
 }
 function explain(e){
@@ -259,7 +272,7 @@ function explain(e){
 // ---------- tape
 async function refresh(){
   const [count, root, win, pb, cb, bn] = await Promise.all([tape.read.eventCount(), tape.read.eventsRoot(), tape.read.disputeWindow(), tape.read.postBond(), tape.read.challengeBond(), pub.getBlock()]);
-  $('tape-addr').textContent = D.tape; $('hook-addr').textContent = D.hook;
+  $('tape-addr').innerHTML = explorer('address', D.tape); $('hook-addr').innerHTML = explorer('address', D.hook);
   $('count').textContent = count.toString(); $('root').textContent = root; $('window').textContent = win+' s'; $('bonds').textContent = 'post '+formatEther(pb)+' ETH · challenge '+formatEther(cb)+' ETH';
   $('net').textContent = 'chain '+D.chainId+' · block '+bn.number;
   await readSym(); await events(Number(bn.timestamp), Number(win)); await poolState(); await tradeStatus(); await calendar(Number(bn.timestamp), Number(win));
@@ -321,6 +334,7 @@ function dec(){ const {mask,on} = tiles($('dec-tiles'), $('dec').value.trim()); 
 $('dec').addEventListener('input', dec); dec();
 
 async function poolState(){
+  if (!HAS_POOL) { $('pool-id').textContent='no sample pool on this chain'; $('pool-sym').textContent='—'; $('pool-op').textContent='—'; $('pool-ack').textContent='—'; ['ack','try-swap','try-add'].forEach(i=>$(i).disabled=true); return; }
   const [s, op, ack] = await Promise.all([hook.read.symbolOf([POOL_ID]), hook.read.operatorOf([POOL_ID]), hook.read.acknowledged([POOL_ID])]);
   $('pool-id').textContent = POOL_ID; $('pool-sym').textContent = sym(s)||'—'; $('pool-op').textContent = op; $('pool-ack').textContent = ack;
 }
@@ -332,6 +346,7 @@ $('try-add').onclick = () => tx(() => getContract({ address: D.lpRouter, abi: LP
 // ---------- can I trade now
 const TS=['Unknown','Ok','Refused'];
 async function tradeStatus(){
+  if (!HAS_POOL) { $('ts').className='badge'; $('ts-state').textContent='No sample pool'; $('ts-reason').textContent='bind a pool to a symbol to query its status'; return; }
   const [st, reason, eff] = await hook.read.tradeStatus([KEY]);
   const r = sym(reason); const el=$('ts'); el.className='badge '+TS[st];
   $('ts-state').textContent = TS[st]==='Ok' ? 'Ok to trade' : TS[st]==='Refused' ? 'Refused' : 'Unknown';

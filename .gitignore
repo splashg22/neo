@@ -5,3 +5,4 @@ broadcast/
 .anvil.log
 .http.log
 app/deployments.local.json
+docs/testnet-deployer-address.txt

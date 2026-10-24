@@ -1,0 +1,21 @@
+{
+  "name": "@neo/mcp",
+  "version": "1.0.0",
+  "description": "MCP server: corporate-action state for tokenized-equity pools on Robinhood Chain (NEO)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bin": {
+    "neo-mcp": "./server.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "viem": "^2.21.0",
+    "zod": "^3.23.8"
+  }
+}

@@ -62,14 +62,35 @@ The console (`app/index.html`, viem) is a working surface for every role:
 
 Use a browser wallet pointed at `127.0.0.1:8545` (chain 31337), or pick a Dev signer in the header: Anvil's well-known test accounts for reviewer, attester, pool operator and challenger. The dispute window is 45 seconds locally.
 
+## Chains
+
+| | Chain ID | RPC (public, rate-limited) | Explorer |
+|---|---|---|---|
+| Robinhood Chain | 4663 | `https://rpc.mainnet.chain.robinhood.com` | robinhoodchain.blockscout.com |
+| Robinhood Chain Testnet | 46630 | `https://rpc.testnet.chain.robinhood.com` | explorer.testnet.chain.robinhood.com · faucet.testnet.chain.robinhood.com |
+
+Uniswap v4 `PoolManager` is at `0x8366a39CC670B4001A1121B8F6A443A643e40951` on both. The console (`app/`) has a chain selector and loads `app/deployments.<chainId>.json`; a chain without that file shows the deploy command instead.
+
+## Agents and integrators
+
+- **MCP server** (`mcp/server.mjs`, stdio, read-only): `equity_halt_status`, `equity_actions`, `equity_trade_status`, `equity_tape`, `hook_permissions`. Every answer carries `chainId`, `block`, `timestamp`. `cd mcp && npm i && NEO_CHAIN=46630 node server.mjs`; `node test-client.mjs` exercises all tools against a local chain.
+- **Skill file** for agents: [`app/agents/SKILL.md`](app/agents/SKILL.md). Rule one: read `tradeStatus` before quoting a stock-token pool; `unknown` is never `ok`.
+- **Attesters**: [`docs/attesters.md`](docs/attesters.md) — how an issuer signs events and what happens after.
+
+## Hosting
+
+`app/` is static. `.github/workflows/pages.yml` publishes it to GitHub Pages on every push to `main` that touches `app/`. Commit the `deployments.<chainId>.json` files you want the public console to use.
+
 ## Deploy
 
 ```bash
-cp .env.example .env   # fill in
+cp .env.example .env   # PRIVATE_KEY, RPC_URL; defaults target testnet 46630
+set -a; source .env; set +a
 forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast
+forge verify-contract <tape> src/Tape.sol:Tape --verifier blockscout --verifier-url $VERIFIER_URL --chain-id 46630
 ```
 
-`Deploy.s.sol` deploys the Tape, then mines a CREATE2 salt so the hook's address carries exactly `BEFORE_SWAP | BEFORE_ADD_LIQUIDITY` and deploys it against the chain's `PoolManager`.
+`Deploy.s.sol` deploys the Tape, mines a CREATE2 salt so the hook's address carries exactly `BEFORE_SWAP | BEFORE_ADD_LIQUIDITY`, deploys the hook against the chain's `PoolManager`, and writes `app/deployments.<chainId>.json`. Optional `ATTESTER` + `SYMBOL` set a first attester in the same run.
 
 ## Status
 

@@ -1,0 +1,14 @@
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+const t = new StdioClientTransport({ command: 'node', args: ['server.mjs'], env: { ...process.env, NEO_CHAIN: process.env.NEO_CHAIN || '31337' } });
+const c = new Client({ name: 'test', version: '0' }); await c.connect(t);
+const tools = (await c.listTools()).tools.map(x => x.name); console.log('tools:', tools.join(', '));
+const call = async (name, args) => { const r = await c.callTool({ name, arguments: args }); console.log('\n#', name, JSON.stringify(args)); console.log(r.content[0].text.slice(0, 700)); };
+await call('equity_halt_status', { symbol: 'ALFA' });
+await call('equity_halt_status', { symbol: 'NOPE' });
+await call('equity_actions', { symbol: 'ALFA', include: 'all' });
+const D = JSON.parse((await import('node:fs')).readFileSync('../app/deployments.local.json', 'utf8'));
+await call('equity_trade_status', { currency0: D.token0, currency1: D.token1, fee: 3000, tickSpacing: 60 });
+await call('equity_tape', { symbol: 'ALFA' });
+await call('hook_permissions', { address: D.hook });
+await c.close(); process.exit(0);
