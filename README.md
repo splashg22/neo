@@ -42,6 +42,24 @@ forge test -vv
 
 Tests cover signature and bond checks, nonce replay, the dispute window, both resolve outcomes, on-chain Merkle root against a reference tree with proofs for every leaf (and forged/misindexed proofs failing), hook address mining, halt blocking swap and add-liquidity but not remove, split blocking until acknowledged, dividends never blocking, and unbound pools being inert.
 
+## Run it locally
+
+```bash
+scripts/dev.sh
+```
+
+Starts Anvil on `:8545`, deploys a complete environment (`script/DeployLocal.s.sol`: PoolManager, Tape, CorporateActionHook at a mined address, mock ALFA and USDG tokens, one hooked pool with liquidity, an attester, three posted events) and serves the console at `http://127.0.0.1:5173`. `scripts/dev.sh stop` tears it down.
+
+The console (`app/index.html`, viem) is a working surface for every role:
+
+- **Tape** — finalized count, `eventsRoot()`, dispute window, bonds; read any symbol's halt state and last action.
+- **Post an event** — the attester signs the EIP-712 `Event` in their wallet; anyone posts it with the bond.
+- **Events** — every posted event with status and window countdown; challenge, finalize, and reviewer uphold/reject inline.
+- **Hook** — the sample pool's bound symbol, operator and acknowledgement; "Try a swap" / "Try adding liquidity" show exactly what the hook does under the current Tape state; operator acknowledge after a split.
+- **Decode any hook address** — the 14 permission bits.
+
+Use a browser wallet pointed at `127.0.0.1:8545` (chain 31337), or pick a Dev signer in the header: Anvil's well-known test accounts for reviewer, attester, pool operator and challenger. The dispute window is 45 seconds locally.
+
 ## Deploy
 
 ```bash

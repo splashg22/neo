@@ -2,3 +2,6 @@ out/
 cache/
 broadcast/
 .env
+.anvil.log
+.http.log
+app/deployments.local.json

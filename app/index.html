@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEO Console</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{--bg:#f3eee3;--fg:#17382c;--muted:#6b7a6e;--dim:#a3ad9f;--line:rgba(23,56,44,.14);--line2:rgba(23,56,44,.32);--green:#9fdcb0;--green2:#c6ecd0;--panel:#faf7f0;--ok:#1f7a4d;--bad:#b4362f;--warn:#9a6a12;
+--body:"Instrument Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+a{color:inherit}h1,h2,h3{margin:0;font-weight:400;letter-spacing:-.02em}h2{font-size:1.25rem}h3{font-size:1rem;font-weight:500}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 24px;height:60px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5;flex-wrap:wrap}
+.brand{font-weight:500;letter-spacing:.1em}.brand small{font-weight:400;letter-spacing:0;color:var(--muted);margin-left:10px}
+.acct{display:flex;gap:10px;align-items:center;font-size:.86rem;color:var(--muted)}
+.wrap{max-width:1180px;margin:0 auto;padding:24px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden;min-width:0}
+.card header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.card header .n{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.body{padding:16px 18px;display:grid;gap:12px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:.88rem}.kv dt{color:var(--muted)}.kv dd{margin:0;font-family:var(--mono);font-size:.8rem;overflow-wrap:anywhere}
+.btn{font:500 .88rem var(--body);padding:9px 14px;border-radius:4px;border:1px solid var(--green);background:var(--green);color:var(--fg);cursor:pointer}
+.btn:hover{background:var(--green2)}.btn.ghost{background:transparent;border-color:var(--line2)}.btn.ghost:hover{background:var(--green2);border-color:var(--green)}
+.btn:disabled{opacity:.45;cursor:default}
+input,select{font:500 .86rem var(--mono);background:#fff;color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:9px 11px;width:100%}
+input:focus-visible,select:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+label{font-size:.78rem;color:var(--muted);display:grid;gap:5px}
+.row{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:500}tr:last-child td{border-bottom:0}
+.pill{font-family:var(--mono);font-size:.66rem;padding:3px 8px;border-radius:4px;border:1px solid var(--line2);white-space:nowrap;text-transform:uppercase;letter-spacing:.06em}
+.pill.Pending{color:var(--warn);border-color:var(--warn)}.pill.Challenged{color:var(--bad);border-color:var(--bad)}.pill.Finalized{color:var(--ok);border-color:var(--ok)}.pill.Rejected{color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(14,1fr);border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#fff}
+.tiles i{height:38px;border-right:1px solid var(--line);display:grid;place-items:center;font:500 .62rem var(--mono);color:var(--dim)}.tiles i:last-child{border-right:0}.tiles i.on{background:var(--green);color:var(--fg)}
+.log{font-family:var(--mono);font-size:.74rem;color:var(--muted);max-height:160px;overflow:auto;display:grid;gap:4px}
+.log .ok{color:var(--ok)}.log .bad{color:var(--bad)}
+.state{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.state b{font-weight:500}
+.note{font-size:.8rem;color:var(--muted)}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav>
+  <span class="brand">NEO <small>Console</small></span>
+  <span class="acct">
+    <span id="net" class="mono">—</span>
+    <select id="signer" style="width:auto">
+      <option value="injected">Browser wallet</option>
+      <option value="dev0">Dev: deployer / reviewer (#0)</option>
+      <option value="dev1">Dev: attester (#1)</option>
+      <option value="dev2">Dev: pool operator (#2)</option>
+      <option value="dev3">Dev: challenger (#3)</option>
+    </select>
+    <button class="btn" id="connect">Connect</button>
+    <span id="who" class="mono"></span>
+  </span>
+</nav>
+
+<div class="wrap">
+  <div class="grid">
+    <section class="card">
+      <header><h2>Tape</h2><span class="n" id="tape-addr">—</span></header>
+      <div class="body">
+        <dl class="kv">
+          <dt>Events finalized</dt><dd id="count">—</dd>
+          <dt>eventsRoot()</dt><dd id="root">—</dd>
+          <dt>Dispute window</dt><dd id="window">—</dd>
+          <dt>Bonds</dt><dd id="bonds">—</dd>
+        </dl>
+        <div class="state">Symbol <input id="sym" value="ALFA" style="width:110px"> <button class="btn ghost" id="read-sym">Read</button> <span id="sym-state" class="mono note"></span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Post an event</h2><span class="n">attester signs · anyone posts</span></header>
+      <div class="body">
+        <div class="row">
+          <label>Symbol<input id="p-sym" value="ALFA"></label>
+          <label>Kind<select id="p-kind"><option value="1">Split</option><option value="2">Dividend</option><option value="3">Halt</option><option value="4">Rename</option></select></label>
+          <label>Effective (unix)<input id="p-eff" value=""></label>
+          <label>Value<input id="p-val" value="40000"></label>
+          <label>Nonce<input id="p-nonce" value="4"></label>
+        </div>
+        <p class="note">Split: new shares per old share ×1e4 (4-for-1 = 40000). Dividend: cents. Halt: 1 on / 0 off. Rename: new symbol text.</p>
+        <div class="actions">
+          <button class="btn ghost" id="sign">1 · Sign as attester</button>
+          <button class="btn" id="post" disabled>2 · Post with bond</button>
+        </div>
+        <div id="sig" class="mono note" style="overflow-wrap:anywhere"></div>
+      </div>
+    </section>
+
+    <section class="card" style="grid-column:1/-1">
+      <header><h2>Events</h2><span class="n" id="ev-n">—</span></header>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Symbol</th><th>Kind</th><th>Effective</th><th>Value</th><th>Status</th><th>Window</th><th>Poster</th><th></th></tr></thead>
+        <tbody id="events"></tbody>
+      </table></div>
+    </section>
+
+    <section class="card">
+      <header><h2>Hook</h2><span class="n" id="hook-addr">—</span></header>
+      <div class="body">
+        <div class="tiles" id="tiles"></div>
+        <dl class="kv">
+          <dt>Pool</dt><dd id="pool-id">—</dd>
+          <dt>Bound symbol</dt><dd id="pool-sym">—</dd>
+          <dt>Operator</dt><dd id="pool-op">—</dd>
+          <dt>Acknowledged</dt><dd id="pool-ack">—</dd>
+        </dl>
+        <div class="actions">
+          <button class="btn ghost" id="ack">Acknowledge current action (operator)</button>
+          <button class="btn ghost" id="try-swap">Try a swap</button>
+          <button class="btn ghost" id="try-add">Try adding liquidity</button>
+        </div>
+        <p class="note" id="hook-note">A swap or deposit attempt shows exactly what the hook does under the current Tape state.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <header><h2>Decode any hook address</h2><span class="n">14 permission bits</span></header>
+      <div class="body">
+        <input id="dec" value="" spellcheck="false">
+        <div class="tiles" id="dec-tiles"></div>
+        <div class="mono note" id="dec-note">—</div>
+      </div>
+    </section>
+
+    <section class="card" style="grid-column:1/-1">
+      <header><h2>Activity</h2><span class="n">this session</span></header>
+      <div class="body"><div class="log" id="log"></div></div>
+    </section>
+  </div>
+</div>
+
+<script type="module">
+import { createPublicClient, createWalletClient, http, custom, parseAbi, formatEther, encodeAbiParameters, keccak256, stringToHex, hexToString, getContract, decodeErrorResult } from 'https://esm.sh/viem@2.21.0';
+import { privateKeyToAccount } from 'https://esm.sh/viem@2.21.0/accounts';
+
+const $ = id => document.getElementById(id);
+const log = (m, cls='') => { const d=document.createElement('div'); d.className=cls; d.textContent=new Date().toLocaleTimeString()+'  '+m; $('log').prepend(d); };
+
+const D = await (await fetch('./deployments.local.json?'+Date.now())).json();
+const RPC = 'http://127.0.0.1:8545';
+const chain = { id: D.chainId, name: 'local', nativeCurrency:{name:'ETH',symbol:'ETH',decimals:18}, rpcUrls:{default:{http:[RPC]}} };
+const pub = createPublicClient({ chain, transport: http(RPC) });
+
+const TAPE_ABI = parseAbi([
+  'function isHalted(bytes32) view returns (bool)',
+  'function action(bytes32) view returns (uint8,uint64,uint256)',
+  'function eventsRoot() view returns (bytes32)',
+  'function eventCount() view returns (uint256)',
+  'function disputeWindow() view returns (uint64)',
+  'function postBond() view returns (uint256)',
+  'function challengeBond() view returns (uint256)',
+  'function attesterOf(bytes32) view returns (address)',
+  'function pending(bytes32) view returns ((( bytes32 symbol, uint8 kind, uint64 effective, uint256 value, uint64 nonce) e, address poster, address challenger, uint64 postedAt, uint8 status))',
+  'function digestOf((bytes32 symbol, uint8 kind, uint64 effective, uint256 value, uint64 nonce)) view returns (bytes32)',
+  'function post((bytes32 symbol, uint8 kind, uint64 effective, uint256 value, uint64 nonce), bytes) payable returns (bytes32)',
+  'function challenge(bytes32) payable',
+  'function finalize(bytes32)',
+  'function resolve(bytes32, bool)',
+  'event Posted(bytes32 indexed id, bytes32 indexed symbol, uint8 kind, address poster)',
+  'event Challenged(bytes32 indexed id, address challenger)',
+  'event Finalized(bytes32 indexed id, bytes32 indexed symbol, uint256 index, bytes32 root, address poster)',
+  'event Rejected(bytes32 indexed id, address challenger)',
+  'error NoAttester(bytes32)','error BadSignature()','error WrongBond(uint256,uint256)','error NotPending(bytes32)','error WindowOpen(uint64)','error WindowClosed(uint64)','error AlreadyPosted(bytes32)','error NotReviewer()',
+]);
+const HOOK_ABI = parseAbi([
+  'function symbolOf(bytes32) view returns (bytes32)',
+  'function operatorOf(bytes32) view returns (address)',
+  'function acknowledged(bytes32) view returns (bytes32)',
+  'function acknowledge((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks))',
+  'function label() view returns (string)',
+  'error Halted(bytes32)','error AwaitingAcknowledgement(bytes32,uint8,uint64)','error NotOperator()',
+]);
+const SWAP_ABI = parseAbi([
+  'function swap((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key,(bool zeroForOne,int256 amountSpecified,uint160 sqrtPriceLimitX96) params,(bool takeClaims,bool settleUsingBurn) testSettings,bytes hookData) payable returns (int256)',
+]);
+const LP_ABI = parseAbi([
+  'function modifyLiquidity((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key,(int24 tickLower,int24 tickUpper,int256 liquidityDelta,bytes32 salt) params,bytes hookData) payable returns (int256)',
+]);
+const KEY = { currency0: D.token0, currency1: D.token1, fee: 3000, tickSpacing: 60, hooks: D.hook };
+const POOL_ID = keccak256(encodeAbiParameters([{type:'address'},{type:'address'},{type:'uint24'},{type:'int24'},{type:'address'}],[KEY.currency0,KEY.currency1,KEY.fee,KEY.tickSpacing,KEY.hooks]));
+const KINDS = ['None','Split','Dividend','Halt','Rename'];
+const STATUS = ['Unknown','Pending','Challenged','Finalized','Rejected'];
+const b32 = s => stringToHex(s.slice(0,32), { size: 32 });
+const sym = h => { try { return hexToString(h, { size: 32 }).replace(/\0+$/,''); } catch { return h; } };
+const short = a => a ? a.slice(0,6)+'…'+a.slice(-4) : '—';
+const DEV_KEYS = { dev0:'0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80', dev1:'0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d', dev2:'0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a', dev3:'0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6' };
+
+let wallet = null, account = null;
+async function connect(){
+  const mode = $('signer').value;
+  if (mode === 'injected'){
+    if (!window.ethereum) { log('No browser wallet found. Use a Dev signer for the local chain.', 'bad'); return; }
+    const [addr] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    wallet = createWalletClient({ chain, transport: custom(window.ethereum), account: addr }); account = addr;
+  } else {
+    const acc = privateKeyToAccount(DEV_KEYS[mode]);
+    wallet = createWalletClient({ chain, transport: http(RPC), account: acc }); account = acc.address;
+  }
+  $('who').textContent = short(account); log('Connected '+account);
+}
+$('connect').onclick = connect;
+
+const tape = getContract({ address: D.tape, abi: TAPE_ABI, client: pub });
+const hook = getContract({ address: D.hook, abi: HOOK_ABI, client: pub });
+
+async function tx(fn){
+  if (!wallet) { log('Connect a signer first.', 'bad'); return; }
+  try { const h = await fn(); log('tx '+h); const r = await pub.waitForTransactionReceipt({ hash: h }); log(r.status==='success'?'confirmed in block '+r.blockNumber:'reverted', r.status==='success'?'ok':'bad'); await refresh(); }
+  catch (e) { log(explain(e), 'bad'); }
+}
+function explain(e){
+  const m = e?.shortMessage || e?.message || String(e);
+  const data = e?.cause?.data || e?.data || (e?.cause?.cause?.data);
+  for (const abi of [TAPE_ABI, HOOK_ABI]) { try { if (data) { const d = decodeErrorResult({ abi, data }); return d.errorName+'('+(d.args||[]).map(a=>typeof a==='string'&&a.startsWith('0x')&&a.length===66?sym(a):String(a)).join(', ')+')'; } } catch {} }
+  const named = m.match(/(Halted|AwaitingAcknowledgement|NotOperator|NoAttester|BadSignature|WrongBond|NotPending|WindowOpen|WindowClosed|AlreadyPosted|NotReviewer)[^\n]*/);
+  return named ? named[0] : m.slice(0, 220);
+}
+
+// ---------- tape
+async function refresh(){
+  const [count, root, win, pb, cb, bn] = await Promise.all([tape.read.eventCount(), tape.read.eventsRoot(), tape.read.disputeWindow(), tape.read.postBond(), tape.read.challengeBond(), pub.getBlock()]);
+  $('tape-addr').textContent = D.tape; $('hook-addr').textContent = D.hook;
+  $('count').textContent = count.toString(); $('root').textContent = root; $('window').textContent = win+' s'; $('bonds').textContent = 'post '+formatEther(pb)+' ETH · challenge '+formatEther(cb)+' ETH';
+  $('net').textContent = 'chain '+D.chainId+' · block '+bn.number;
+  await readSym(); await events(Number(bn.timestamp), Number(win)); await poolState();
+}
+async function readSym(){
+  const s = b32($('sym').value.trim()); const [h, a, att] = await Promise.all([tape.read.isHalted([s]), tape.read.action([s]), tape.read.attesterOf([s])]);
+  const v = a[0]===1 ? (Number(a[2])/1e4)+'-for-1' : a[0]===2 ? '$'+(Number(a[2])/100).toFixed(2) : a[0]===4 ? '→ '+sym('0x'+a[2].toString(16).padStart(64,'0')) : a[2].toString();
+  $('sym-state').textContent = `halted: ${h} · last action: ${KINDS[a[0]]}${a[0]?' '+v+' effective '+new Date(Number(a[1])*1000).toISOString().slice(0,10):''} · attester ${short(att)}`;
+}
+$('read-sym').onclick = readSym;
+
+async function events(now, win){
+  const logs = await pub.getLogs({ address: D.tape, event: TAPE_ABI.find(x=>x.name==='Posted'), fromBlock: 0n });
+  const rows = await Promise.all(logs.map(async l => { const p = await tape.read.pending([l.args.id]); return { id: l.args.id, ...p }; }));
+  $('ev-n').textContent = rows.length+' posted';
+  $('events').innerHTML = rows.map(r => {
+    const e = r.e; const st = STATUS[r.status]; const closes = Number(r.postedAt)+win; const left = closes-now;
+    const val = e.kind===1 ? (Number(e.value)/1e4)+'-for-1' : e.kind===2 ? '$'+(Number(e.value)/100).toFixed(2) : e.kind===3 ? (e.value===1n?'on':'off') : sym('0x'+e.value.toString(16).padStart(64,'0'));
+    const win_ = st==='Pending' ? (left>0 ? 'closes in '+left+' s' : 'closed · can finalize') : st==='Challenged' ? 'awaiting reviewer' : '—';
+    const acts = st==='Pending' ? (left>0 ? `<button class="btn ghost" data-a="challenge" data-id="${r.id}">Challenge</button>` : `<button class="btn" data-a="finalize" data-id="${r.id}">Finalize</button>`)
+               : st==='Challenged' ? `<button class="btn ghost" data-a="uphold" data-id="${r.id}">Uphold</button> <button class="btn ghost" data-a="reject" data-id="${r.id}">Reject</button>` : '';
+    return `<tr><td>${sym(e.symbol)}</td><td>${KINDS[e.kind]}</td><td class="mono">${new Date(Number(e.effective)*1000).toISOString().slice(0,10)}</td><td class="mono">${val}</td><td><span class="pill ${st}">${st}</span></td><td class="mono">${win_}</td><td class="mono">${short(r.poster)}</td><td class="actions">${acts}</td></tr>`;
+  }).join('');
+  $('events').querySelectorAll('button').forEach(b => b.onclick = () => act(b.dataset.a, b.dataset.id));
+}
+async function act(a, id){
+  if (!wallet) { log('Connect a signer first.', 'bad'); return; }
+  const c = getContract({ address: D.tape, abi: TAPE_ABI, client: wallet });
+  if (a==='challenge') return tx(async () => c.write.challenge([id], { value: await tape.read.challengeBond() }));
+  if (a==='finalize') return tx(() => c.write.finalize([id]));
+  if (a==='uphold') return tx(() => c.write.resolve([id, true]));
+  if (a==='reject') return tx(() => c.write.resolve([id, false]));
+}
+
+// ---------- post flow
+let signed = null;
+$('p-eff').value = Math.floor(Date.now()/1000)+86400*3;
+function readEvent(){ const k = Number($('p-kind').value); let v = $('p-val').value.trim(); const value = k===4 ? BigInt(b32(v)) : BigInt(v); return { symbol: b32($('p-sym').value.trim()), kind: k, effective: BigInt($('p-eff').value), value, nonce: BigInt($('p-nonce').value) }; }
+$('sign').onclick = async () => {
+  if (!wallet) { log('Connect the attester signer first.', 'bad'); return; }
+  try {
+    const e = readEvent();
+    const sig = await wallet.signTypedData({ account: wallet.account, domain: { name:'NEO Tape', version:'1', chainId: D.chainId, verifyingContract: D.tape }, types: { Event: [ {name:'symbol',type:'bytes32'},{name:'kind',type:'uint8'},{name:'effective',type:'uint64'},{name:'value',type:'uint256'},{name:'nonce',type:'uint64'} ] }, primaryType: 'Event', message: e });
+    signed = { e, sig }; $('sig').textContent = 'signature '+sig; $('post').disabled = false; log('Event signed by '+short(account), 'ok');
+  } catch (err) { log(explain(err), 'bad'); }
+};
+$('post').onclick = async () => {
+  if (!signed) return; const c = getContract({ address: D.tape, abi: TAPE_ABI, client: wallet });
+  await tx(async () => c.write.post([signed.e, signed.sig], { value: await tape.read.postBond() }));
+  signed = null; $('post').disabled = true; $('sig').textContent = '';
+};
+
+// ---------- hook + pool
+const NAMES=['BEFORE_INITIALIZE','AFTER_INITIALIZE','BEFORE_ADD_LIQUIDITY','AFTER_ADD_LIQUIDITY','BEFORE_REMOVE_LIQUIDITY','AFTER_REMOVE_LIQUIDITY','BEFORE_SWAP','AFTER_SWAP','BEFORE_DONATE','AFTER_DONATE','BEFORE_SWAP_RETURNS_DELTA','AFTER_SWAP_RETURNS_DELTA','AFTER_ADD_LIQUIDITY_RETURNS_DELTA','AFTER_REMOVE_LIQUIDITY_RETURNS_DELTA'];
+function tiles(el, addr){ el.innerHTML=''; const mask = /^0x[0-9a-fA-F]{40}$/.test(addr) ? parseInt(addr.slice(-4),16)&0x3fff : -1; const on=[]; for(let b=13;b>=0;b--){ const i=document.createElement('i'); i.textContent=b; i.title=NAMES[13-b]; if(mask>=0 && (mask>>b&1)){ i.className='on'; on.push(NAMES[13-b]); } el.appendChild(i);} return {mask,on}; }
+tiles($('tiles'), D.hook);
+$('dec').value = D.hook;
+function dec(){ const {mask,on} = tiles($('dec-tiles'), $('dec').value.trim()); $('dec-note').textContent = mask<0 ? 'enter 0x + 40 hex characters' : 'mask 0x'+mask.toString(16).padStart(4,'0')+' · '+on.length+' of 14 · '+(on.join(' · ')||'none'); }
+$('dec').addEventListener('input', dec); dec();
+
+async function poolState(){
+  const [s, op, ack] = await Promise.all([hook.read.symbolOf([POOL_ID]), hook.read.operatorOf([POOL_ID]), hook.read.acknowledged([POOL_ID])]);
+  $('pool-id').textContent = POOL_ID; $('pool-sym').textContent = sym(s)||'—'; $('pool-op').textContent = op; $('pool-ack').textContent = ack;
+}
+$('ack').onclick = () => tx(() => getContract({ address: D.hook, abi: HOOK_ABI, client: wallet }).write.acknowledge([KEY]));
+$('try-swap').onclick = () => tx(() => getContract({ address: D.swapRouter, abi: SWAP_ABI, client: wallet }).write.swap([KEY, { zeroForOne: true, amountSpecified: -1000000000000000n, sqrtPriceLimitX96: 4295128740n }, { takeClaims: false, settleUsingBurn: false }, '0x']));
+$('try-add').onclick = () => tx(() => getContract({ address: D.lpRouter, abi: LP_ABI, client: wallet }).write.modifyLiquidity([KEY, { tickLower: -600, tickUpper: 600, liquidityDelta: 1000000000000000000n, salt: '0x'+'0'.repeat(64) }, '0x']));
+
+await refresh(); setInterval(refresh, 4000);
+log('Console ready · Tape '+short(D.tape)+' · Hook '+short(D.hook));
+</script>
+</body>
+</html>
