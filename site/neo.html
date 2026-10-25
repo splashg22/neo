@@ -128,12 +128,12 @@ footer{padding:36px 0 48px;color:var(--muted);font-size:.86rem;display:flex;just
   <div class="row" id="contracts" style="border-bottom:0">
     <div class="t">
       <header><h3>Contracts</h3><span class="n">[03]</span></header>
-      <p>Solidity 0.8.26 on Foundry. The suite runs against a live Uniswap v4 PoolManager: hook address derivation, halt and split enforcement in real swaps, the post, challenge and resolve lifecycle, and Merkle roots checked against a reference tree. Nothing is deployed or audited yet.</p>
+      <p>Solidity 0.8.26 on Foundry. Five hooks (corporate-action halt, limit up / limit down, eligibility gate, volatility fee, dividend pass-through), the Tape with an on-chain finalizer reward, an indexer API, an operator daemon, an SDK and an MCP server. The suite runs against a live Uniswap v4 PoolManager. Nothing is deployed or audited yet.</p>
       <a class="btn ghost" href="#contracts">Source</a>
     </div>
     <div class="b status">
-      <div><span class="v">3</span><span class="k">Contracts: Tape, CorporateActionHook, IncrementalMerkle</span></div>
-      <div><span class="v">23</span><span class="k">Tests passing against a live PoolManager</span></div>
+      <div><span class="v">7</span><span class="k">Contracts: Tape, five hooks, IncrementalMerkle</span></div>
+      <div><span class="v">86</span><span class="k">Tests passing against a live PoolManager</span></div>
       <div><span class="v">0</span><span class="k">Deployments. Robinhood Chain, chain ID 4663, is the target</span></div>
     </div>
   </div>

@@ -40,6 +40,15 @@ contract Tape is ITape, EIP712 {
 
     IncrementalMerkle.Tree internal _tree;
 
+    /// @notice Paid from `rewardPool` to whoever lands `finalize()`; the on-chain wage for operators.
+    uint256 public finalizeReward;
+    /// @notice ETH set aside for finalizer rewards, kept separate from bonds. Anyone may `fund()` it.
+    uint256 public rewardPool;
+
+    event Funded(address indexed from, uint256 amount, uint256 pool);
+    event FinalizeRewardSet(uint256 amount);
+    event RewardPaid(bytes32 indexed id, address indexed to, uint256 amount);
+
     modifier onlyReviewer() {
         if (msg.sender != reviewer) revert NotReviewer();
         _;
@@ -64,6 +73,22 @@ contract Tape is ITape, EIP712 {
 
     function setReviewer(address next) external onlyReviewer {
         reviewer = next;
+    }
+
+    function setFinalizeReward(uint256 amount) external onlyReviewer {
+        finalizeReward = amount;
+        emit FinalizeRewardSet(amount);
+    }
+
+    /// @notice Add ETH to the finalizer reward pool. Treasury, issuers or anyone who wants events finalized promptly.
+    function fund() external payable {
+        rewardPool += msg.value;
+        emit Funded(msg.sender, msg.value, rewardPool);
+    }
+
+    receive() external payable {
+        rewardPool += msg.value;
+        emit Funded(msg.sender, msg.value, rewardPool);
     }
 
     // ------------------------------------------------------------------ reads
@@ -151,6 +176,7 @@ contract Tape is ITape, EIP712 {
         if (block.timestamp < closesAt) revert WindowOpen(closesAt);
         _apply(id, p);
         _pay(p.poster, postBond);
+        _reward(id, msg.sender);
     }
 
     /// @notice Reviewer settles a challenged event. If the event is correct, it finalizes and the
@@ -182,6 +208,16 @@ contract Tape is ITape, EIP712 {
         uint256 index = _tree.count;
         _tree.insert(id);
         emit Finalized(id, e.symbol, index, _tree.root(), p.poster);
+    }
+
+    /// @dev Pays the finalizer if the pool can cover it; never blocks finalization when it cannot.
+    function _reward(bytes32 id, address to) internal {
+        uint256 amount = finalizeReward;
+        if (amount == 0 || rewardPool < amount) return;
+        rewardPool -= amount;
+        (bool ok,) = to.call{value: amount}("");
+        if (ok) emit RewardPaid(id, to, amount);
+        else rewardPool += amount; // a finalizer that cannot receive ETH forfeits the reward
     }
 
     function _pay(address to, uint256 amount) internal {

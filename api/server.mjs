@@ -17,7 +17,7 @@ const CHAINS = JSON.parse(readFileSync(join(root, 'app/chains.json'), 'utf8'));
 const chainId = process.env.NEO_CHAIN || '31337';
 const C = CHAINS[chainId]; if (!C) { console.error('unknown chain', chainId); process.exit(1); }
 const D = JSON.parse(readFileSync(join(root, 'app', C.deployments), 'utf8'));
-const PORT = Number(process.env.NEO_API_PORT || 8787);
+const PORT = Number(process.env.NEO_API_PORT || 8787); const HOST = process.env.NEO_API_HOST || '127.0.0.1';
 const API_KEY = process.env.NEO_API_KEY || '';
 const DATA = join(root, 'api', 'data', chainId); mkdirSync(DATA, { recursive: true });
 const store = name => { const f = join(DATA, name + '.json'); return { read: () => existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')) : [], write: v => writeFileSync(f, JSON.stringify(v, null, 1)) }; };
@@ -114,4 +114,4 @@ const server = http.createServer(async (req, res) => {
     return send(res, 404, { error: 'not found', routes: ['/v1', '/v1/tape', '/v1/events', '/v1/symbols/:sym', '/v1/symbols/:sym/actions', '/v1/pools', '/v1/pools/:id', 'POST /v1/trade-status', 'POST /v1/tx/finalize|challenge|acknowledge', '/v1/runs', '/v1/operators', 'POST /v1/webhooks', '/v1/stream'] });
   } catch (e) { return send(res, 500, { error: e.shortMessage || e.message }); }
 });
-server.listen(PORT, '127.0.0.1', () => console.log(`neo-api ${C.name} (${chainId}) → http://127.0.0.1:${PORT}/v1  indexed to block ${index.lastBlock}`));
+server.listen(PORT, HOST, () => console.log(`neo-api ${C.name} (${chainId}) → http://127.0.0.1:${PORT}/v1  indexed to block ${index.lastBlock}`));

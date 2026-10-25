@@ -287,4 +287,48 @@ contract TapeTest is Test {
         assertEq(tape.eventsOf(ALFA).length, 2);
         assertEq(uint8(tape.pending(ib).status), uint8(ITape.Status.Rejected));
     }
+
+    // ------------------------------------------------------------------ finalizer reward
+
+    function test_reward_paidToFinalizerWhenFunded() public {
+        vm.prank(reviewer);
+        tape.setFinalizeReward(0.01 ether);
+        tape.fund{value: 0.05 ether}();
+        assertEq(tape.rewardPool(), 0.05 ether);
+        ITape.Event memory e = _ev(ITape.Kind.Dividend, uint64(vm.getBlockTimestamp()), 24, 1);
+        bytes32 id = _post(e);
+        vm.warp(vm.getBlockTimestamp() + WINDOW);
+        address op = makeAddr("operator");
+        uint256 before = op.balance;
+        vm.prank(op);
+        tape.finalize(id);
+        assertEq(op.balance, before + 0.01 ether, "finalizer paid");
+        assertEq(tape.rewardPool(), 0.04 ether);
+        // poster still got the bond back; reward did not come out of bonds
+        assertEq(address(tape).balance, 0.04 ether);
+    }
+
+    function test_reward_emptyPoolStillFinalizes() public {
+        vm.prank(reviewer);
+        tape.setFinalizeReward(0.01 ether);
+        ITape.Event memory e = _ev(ITape.Kind.Dividend, uint64(vm.getBlockTimestamp()), 24, 1);
+        bytes32 id = _post(e);
+        vm.warp(vm.getBlockTimestamp() + WINDOW);
+        address op = makeAddr("operator");
+        vm.prank(op);
+        tape.finalize(id);
+        assertEq(op.balance, 0);
+        assertEq(tape.eventCount(), 1);
+    }
+
+    function test_reward_onlyReviewerSets() public {
+        vm.expectRevert(ITape.NotReviewer.selector);
+        tape.setFinalizeReward(1);
+    }
+
+    function test_reward_receiveFunds() public {
+        (bool ok,) = address(tape).call{value: 1 ether}("");
+        assertTrue(ok);
+        assertEq(tape.rewardPool(), 1 ether);
+    }
 }

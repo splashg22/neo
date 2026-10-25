@@ -9,8 +9,12 @@ Tokenized stocks split, pay dividends, get halted and change symbols. A v4 pool 
 | Contract | Role |
 | --- | --- |
 | `src/interfaces/ITape.sol` | The interface every hook imports: `isHalted`, `action`, `eventsRoot`, `verify`, plus the `post` / `challenge` / `finalize` / `resolve` lifecycle. |
-| `src/Tape.sol` | Attest, dispute, finalize. EIP-712 attester signatures per symbol, ETH bonds for poster and challenger, reviewer settles disputes, loser's bond pays the winner. Finalized events update `isHalted` / `action` and append a leaf. `eventsOf(symbol)` indexes every posted event for calendars; `hasAttester(symbol)` says whether a data source exists. |
+| `src/Tape.sol` | Attest, dispute, finalize. EIP-712 attester signatures per symbol, ETH bonds for poster and challenger, reviewer settles disputes, loser's bond pays the winner. Finalized events update `isHalted` / `action` and append a leaf. `eventsOf(symbol)` indexes every posted event for calendars; `hasAttester(symbol)` says whether a data source exists. **Operator wage on-chain:** anyone can `fund()` the `rewardPool`; the reviewer sets `finalizeReward`; whoever lands `finalize()` is paid it, never from bonds, and an empty pool never blocks finalization. |
 | `src/libraries/IncrementalMerkle.sol` | Depth-20 append-only keccak tree (deposit-contract construction). Ordered sibling proofs. |
+| `src/hooks/LimitUpLimitDownHook.sol` | `BEFORE_SWAP`. Refuses a swap when the pool's pre-swap price is outside a band (default ±10%) around a reference price from an `IReferencePrice` oracle, when the reference is stale (default 15 min) or missing, or when the stock is halted. `tradeStatus(key)` view with reasons `unbound · halted · no-reference · outside-band · ok`. Pre-swap check only; a post-swap check would need `AFTER_SWAP`. |
+| `src/hooks/EligibilityGateHook.sol` | `BEFORE_SWAP \| BEFORE_ADD_LIQUIDITY`. Only addresses on an `IAllowlist` may swap or add liquidity; removing is never gated. The trader is taken from 20-byte `hookData`, else `tx.origin` (limitation documented). No allowlist set means nobody is eligible. |
+| `src/hooks/VolatilityFeeHook.sol` | `BEFORE_SWAP \| AFTER_SWAP`. Dynamic LP fee = base + feePerTick × EWMA of recent tick moves, clamped to a max, plus a bump for a window around any Tape event. Requires a dynamic-fee pool. Transient storage for the pre-swap tick. |
+| `src/hooks/DividendPassThroughHook.sol` | `BEFORE_SWAP`. Issuer deposits the cash dividend in the quote token as escrow; on the first swap at or after a finalized dividend's pay date the hook `donate`s it to in-range liquidity and settles from its own balance; never pays the same dividend twice; skips (keeps escrow) when the pool has no liquidity. **Caveat:** pays in-range LPs at the flush, not holders of record on the record date; a snapshot + claim design is future work and is stated in the NatSpec. |
 | `src/CorporateActionHook.sol` | First NEO hook. Permissions `BEFORE_SWAP \| BEFORE_ADD_LIQUIDITY`. A pool bound to a symbol refuses swaps and new liquidity while halted, and from a split or rename's effective time until the pool operator `acknowledge`s it. Removing liquidity is never blocked. Exposes `label()` and `tradeStatus(poolKey)` → `(Unknown \| Ok \| Refused, reason, effective)`. |
 
 ### Event kinds
@@ -40,7 +44,7 @@ forge test -vv
 
 `lib/v4-periphery` is pinned to `3779387e` (2025-11-05), the last commit that ships `src/utils/BaseHook.sol` and `HookMiner.sol`; later commits moved hooks to a separate repo. `v4-core` is resolved through v4-periphery's own submodule so the two always match. Also in the repo: `site/neo.html`, the concept page (publishable as a static page), and `site/research-wth-hookr.md`, notes on the two neighbouring projects on Robinhood Chain.
 
-Tests (30) cover tradeStatus in every state, the per-symbol event index, signature and bond checks, nonce replay, the dispute window, both resolve outcomes, on-chain Merkle root against a reference tree with proofs for every leaf (and forged/misindexed proofs failing), hook address mining, halt blocking swap and add-liquidity but not remove, split blocking until acknowledged, dividends never blocking, and unbound pools being inert.
+Tests (86 across six suites) cover every hook's permission mask via address mining, reverts through `CustomRevert.WrappedError`, tradeStatus in every state, the per-symbol event index, signature and bond checks, nonce replay, the dispute window, both resolve outcomes, on-chain Merkle root against a reference tree with proofs for every leaf (and forged/misindexed proofs failing), hook address mining, halt blocking swap and add-liquidity but not remove, split blocking until acknowledged, dividends never blocking, and unbound pools being inert.
 
 ## Run it locally
 
@@ -58,6 +62,7 @@ The console (`app/index.html`, viem) is a working surface for every role:
 - **Hook** — the sample pool's bound symbol, operator and acknowledgement; "Try a swap" / "Try adding liquidity" show exactly what the hook does under the current Tape state; operator acknowledge after a split.
 - **Can I trade now?** — `hook.tradeStatus(poolKey)` as a badge: **Ok**, **Refused** (halted, or a split/rename in effect and not acknowledged, with the effective time) or **Unknown** (the symbol has no attester, so no data source). Unknown is never Ok. Read before sending anything; the same view is what an MCP tool or router should call.
 - **Calendar** — every event ever posted for the symbol (`tape.eventsOf`), sorted by effective date: what it is, what it does to the pool, "in effect" or countdown, status, dispute-window countdown for open ones; rejected events stay in the list struck through.
+- **Create a stock pool** — check two tokens, initialize a Uniswap v4 pool with the NEO hook at a chosen price, bind it to a symbol (you become its operator), then add liquidity (local test router locally; the Uniswap app with the hook preset on Robinhood Chain).
 - **Decode any hook address** — the 14 permission bits.
 
 Use a browser wallet pointed at `127.0.0.1:8545` (chain 31337), or pick a Dev signer in the header: Anvil's well-known test accounts for reviewer, attester, pool operator and challenger. The dispute window is 45 seconds locally.
@@ -91,6 +96,8 @@ Console's **Control room** panel reads the API: runs and success rate over 24h, 
 - **Attesters**: [`docs/attesters.md`](docs/attesters.md) — how an issuer signs events and what happens after.
 
 ## Hosting
+
+`deploy/` has Dockerfiles and Fly configs for the API (`neo-api`, persistent volume for the run ledger) and an operator (`neo-operator`); secrets are `NEO_API_KEY`, `NEO_OPERATOR_KEY`, optional `NEO_RPC` for a provider endpoint. `e2e/console.spec.mjs` clicks through the console in headless Chromium against the local stack.
 
 `app/` is static. `.github/workflows/pages.yml` publishes it to GitHub Pages on every push to `main` that touches `app/`. Commit the `deployments.<chainId>.json` files you want the public console to use.
 

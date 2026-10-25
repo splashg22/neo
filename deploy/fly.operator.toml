@@ -1,0 +1,12 @@
+# fly launch --config deploy/fly.operator.toml --dockerfile deploy/Dockerfile.operator
+# fly secrets set NEO_OPERATOR_KEY=0x... NEO_API_KEY=... NEO_API=https://neo-api.fly.dev/v1
+app = "neo-operator"
+primary_region = "iad"
+[build]
+  dockerfile = "Dockerfile.operator"
+[env]
+  NEO_CHAIN = "46630"
+  NEO_OPERATOR_NAME = "neo-operator-1"
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

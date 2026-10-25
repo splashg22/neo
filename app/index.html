@@ -125,6 +125,28 @@ table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:left
     </section>
 
     <section class="card" style="grid-column:1/-1">
+      <header><h2>Create a stock pool</h2><span class="n">PoolManager.initialize → hook.bind → liquidity</span></header>
+      <div class="body">
+        <div class="row">
+          <label>Stock token<input id="cp-a" placeholder="0x… tokenized stock"></label>
+          <label>Quote token<input id="cp-b" placeholder="0x… USDG"></label>
+          <label>Symbol on the Tape<input id="cp-sym" value="ALFA"></label>
+          <label>LP fee<select id="cp-fee"><option value="500">0.05%</option><option value="3000" selected>0.30%</option><option value="10000">1.00%</option></select></label>
+          <label>Tick spacing<select id="cp-ts"><option value="10">10</option><option value="60" selected>60</option><option value="200">200</option></select></label>
+          <label>Initial price (quote per share)<input id="cp-price" value="100"></label>
+        </div>
+        <p class="note" id="cp-note">Tokens are sorted into currency0/currency1 automatically; the price is converted to sqrtPriceX96 for the sorted order. The pool is created with the NEO hook, so from its first block it refuses swaps while the symbol is halted or a split is unacknowledged.</p>
+        <div class="actions">
+          <button class="btn ghost" id="cp-check">Check tokens</button>
+          <button class="btn" id="cp-init" disabled>1 · Initialize pool</button>
+          <button class="btn" id="cp-bind" disabled>2 · Bind symbol (you become operator)</button>
+          <button class="btn ghost" id="cp-lp" disabled>3 · Add liquidity</button>
+        </div>
+        <div class="mono note" id="cp-out"></div>
+      </div>
+    </section>
+
+    <section class="card" style="grid-column:1/-1">
       <header><h2>Events</h2><span class="n" id="ev-n">—</span></header>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>Symbol</th><th>Kind</th><th>Effective</th><th>Value</th><th>Status</th><th>Window</th><th>Poster</th><th></th></tr></thead>
@@ -243,9 +265,12 @@ const SWAP_ABI = parseAbi([
 const LP_ABI = parseAbi([
   'function modifyLiquidity((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key,(int24 tickLower,int24 tickUpper,int256 liquidityDelta,bytes32 salt) params,bytes hookData) payable returns (int256)',
 ]);
-const HAS_POOL = !!(D.token0 && D.token1);
-const KEY = HAS_POOL ? { currency0: D.token0, currency1: D.token1, fee: 3000, tickSpacing: 60, hooks: D.hook } : null;
-const POOL_ID = HAS_POOL ? keccak256(encodeAbiParameters([{type:'address'},{type:'address'},{type:'uint24'},{type:'int24'},{type:'address'}],[KEY.currency0,KEY.currency1,KEY.fee,KEY.tickSpacing,KEY.hooks])) : null;
+let HAS_POOL = !!(D.token0 && D.token1);
+try { const saved = JSON.parse(localStorage.getItem('neo-pool-'+chainId)||'null'); if (saved && saved.hooks && saved.hooks.toLowerCase()===D.hook.toLowerCase()) { D.token0=saved.currency0; D.token1=saved.currency1; D.poolFee=saved.fee; D.poolTick=saved.tickSpacing; HAS_POOL=true; } } catch {}
+const PM_ABI = parseAbi(['function initialize((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key, uint160 sqrtPriceX96) returns (int24)']);
+const ERC20_ABI = parseAbi(['function symbol() view returns (string)','function decimals() view returns (uint8)','function approve(address,uint256) returns (bool)','function allowance(address,address) view returns (uint256)','function balanceOf(address) view returns (uint256)']);
+let KEY = HAS_POOL ? { currency0: D.token0, currency1: D.token1, fee: D.poolFee ?? 3000, tickSpacing: D.poolTick ?? 60, hooks: D.hook } : null;
+let POOL_ID = HAS_POOL ? keccak256(encodeAbiParameters([{type:'address'},{type:'address'},{type:'uint24'},{type:'int24'},{type:'address'}],[KEY.currency0,KEY.currency1,KEY.fee,KEY.tickSpacing,KEY.hooks])) : null;
 const KINDS = ['None','Split','Dividend','Halt','Rename'];
 const STATUS = ['Unknown','Pending','Challenged','Finalized','Rejected'];
 const b32 = s => stringToHex(s.slice(0,32), { size: 32 });
@@ -387,6 +412,59 @@ async function calendar(now, win){
     return `<div class="day ${st}"><span class="d"><b>${new Date(eff*1000).toISOString().slice(0,10)}</b>${when}</span><span class="what"><b>${val}</b><small>${effect}</small></span><span class="pill ${st}">${st}${open}</span></div>`;
   }).join('');
 }
+
+
+// ---------- create a stock pool
+let cpKey = null, cpInfo = null;
+function sqrtPriceX96(priceToken1PerToken0, dec0, dec1){ // price = token1 units per token0 unit, human; adjust decimals
+  const adj = priceToken1PerToken0 * Math.pow(10, dec1 - dec0);
+  const sqrt = Math.sqrt(adj);
+  // sqrt * 2^96 with enough precision via BigInt on a scaled integer
+  const scaled = BigInt(Math.round(sqrt * 1e12));
+  return (scaled << 96n) / 1000000000000n;
+}
+$('cp-check').onclick = async () => {
+  try {
+    const a = $('cp-a').value.trim(), b = $('cp-b').value.trim();
+    if (![a,b].every(x=>/^0x[0-9a-fA-F]{40}$/.test(x)) || a.toLowerCase()===b.toLowerCase()) { $('cp-out').textContent='Two different valid token addresses are required.'; return; }
+    const [sa, da, sb, db] = await Promise.all([pub.readContract({address:a,abi:ERC20_ABI,functionName:'symbol'}), pub.readContract({address:a,abi:ERC20_ABI,functionName:'decimals'}), pub.readContract({address:b,abi:ERC20_ABI,functionName:'symbol'}), pub.readContract({address:b,abi:ERC20_ABI,functionName:'decimals'})]);
+    const aIs0 = a.toLowerCase() < b.toLowerCase();
+    cpInfo = { stock:{addr:a,sym:sa,dec:Number(da)}, quote:{addr:b,sym:sb,dec:Number(db)}, aIs0 };
+    const fee = Number($('cp-fee').value), ts = Number($('cp-ts').value);
+    cpKey = { currency0: aIs0?a:b, currency1: aIs0?b:a, fee, tickSpacing: ts, hooks: D.hook };
+    const pid = keccak256(encodeAbiParameters([{type:'address'},{type:'address'},{type:'uint24'},{type:'int24'},{type:'address'}],[cpKey.currency0,cpKey.currency1,cpKey.fee,cpKey.tickSpacing,cpKey.hooks]));
+    const bound = await hook.read.symbolOf([pid]);
+    $('cp-out').textContent = `${sa} (${da} dec) / ${sb} (${db} dec) · currency0 = ${aIs0?sa:sb} · poolId ${pid}` + (sym(bound)?` · already bound to ${sym(bound)}`:'');
+    $('cp-init').disabled = false; $('cp-bind').disabled = false; $('cp-lp').disabled = false;
+  } catch (e) { $('cp-out').textContent = explain(e); }
+};
+$('cp-init').onclick = () => tx(async () => {
+  const price = Number($('cp-price').value); if (!(price>0)) throw new Error('price must be > 0');
+  // price is quote per share; sqrtPrice is token1 per token0
+  const p10 = cpInfo.aIs0 ? price : 1/price; // token1/token0
+  const dec0 = cpInfo.aIs0 ? cpInfo.stock.dec : cpInfo.quote.dec, dec1 = cpInfo.aIs0 ? cpInfo.quote.dec : cpInfo.stock.dec;
+  const sp = sqrtPriceX96(p10, dec0, dec1);
+  const h = await getContract({ address: D.poolManager, abi: PM_ABI, client: wallet }).write.initialize([cpKey, sp]);
+  try { localStorage.setItem('neo-pool-'+chainId, JSON.stringify(cpKey)); } catch {}
+  return h;
+});
+$('cp-bind').onclick = () => tx(async () => {
+  const h = await getContract({ address: D.hook, abi: parseAbi(['function bind((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks),bytes32)']), client: wallet }).write.bind([cpKey, b32($('cp-sym').value.trim())]);
+  KEY = cpKey; HAS_POOL = true; POOL_ID = keccak256(encodeAbiParameters([{type:'address'},{type:'address'},{type:'uint24'},{type:'int24'},{type:'address'}],[KEY.currency0,KEY.currency1,KEY.fee,KEY.tickSpacing,KEY.hooks]));
+  ['ack','try-swap','try-add'].forEach(i=>$(i).disabled=false);
+  try { localStorage.setItem('neo-pool-'+chainId, JSON.stringify(cpKey)); } catch {}
+  return h;
+});
+$('cp-lp').onclick = async () => {
+  if (D.lpRouter) { // local test router: approve both tokens then mint a ±600 tick position
+    await tx(async () => { for (const t of [cpKey.currency0, cpKey.currency1]) { const al = await pub.readContract({address:t,abi:ERC20_ABI,functionName:'allowance',args:[account, D.lpRouter]}); if (al < 10n**24n) { const h = await getContract({address:t,abi:ERC20_ABI,client:wallet}).write.approve([D.lpRouter, 2n**255n]); await pub.waitForTransactionReceipt({hash:h}); } }
+      return getContract({ address: D.lpRouter, abi: LP_ABI, client: wallet }).write.modifyLiquidity([cpKey, { tickLower: -600, tickUpper: 600, liquidityDelta: 1000000000000000000000n, salt: '0x'+'0'.repeat(64) }, '0x']); });
+  } else {
+    const url = `https://app.uniswap.org/positions/create/v4?currencyA=${cpKey.currency0}&currencyB=${cpKey.currency1}&chain=${chainId}&fee=${cpKey.fee}&tickSpacing=${cpKey.tickSpacing}&hook=${cpKey.hooks}`;
+    $('cp-out').innerHTML = `Add liquidity through the Uniswap app with the hook preset: <a href="${url}" target="_blank" rel="noopener">${url}</a>`;
+    log('Liquidity on this chain goes through Uniswap\'s PositionManager; link shown.');
+  }
+};
 
 await refresh(); setInterval(refresh, 4000);
 // ---------- control room (indexer API; optional)

@@ -1,0 +1,21 @@
+# fly launch --config deploy/fly.api.toml --dockerfile deploy/Dockerfile.api
+# fly secrets set NEO_API_KEY=... [NEO_RPC=https://robinhood-testnet.g.alchemy.com/v2/KEY]
+app = "neo-api"
+primary_region = "iad"
+[build]
+  dockerfile = "Dockerfile.api"
+[env]
+  NEO_CHAIN = "46630"
+  NEO_API_PORT = "8787"
+  NEO_API_HOST = "0.0.0.0"
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = false
+  min_machines_running = 1
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+[mounts]
+  source = "neo_api_data"
+  destination = "/neo/api/data"
