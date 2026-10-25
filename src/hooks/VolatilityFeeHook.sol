@@ -9,9 +9,10 @@ import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {SwapParams} from "v4-core/src/types/PoolOperation.sol";
-import {StateLibrary} from "v4-core/src/libraries/StateLibrary.sol";
 import {LPFeeLibrary} from "v4-core/src/libraries/LPFeeLibrary.sol";
 import {ITape} from "../interfaces/ITape.sol";
+import {ModuleBase} from "../modules/ModuleBase.sol";
+import {VolFeeModule, VolFeeConfig} from "../modules/VolFeeModule.sol";
 
 /// @title VolatilityFeeHook — LP fee that rises with realised volatility and around corporate actions
 /// @notice For a dynamic-fee pool bound to a stock symbol, every swap pays
@@ -23,19 +24,14 @@ import {ITape} from "../interfaces/ITape.sol";
 ///         Pools must be initialised with `LPFeeLibrary.DYNAMIC_FEE_FLAG` as their fee; `bind` refuses
 ///         anything else. Unbound pools pay whatever fee they were initialised with.
 ///
+///         The fee logic lives in `VolFeeModule`; this contract is the standalone hook around it.
+///
 ///         Permissions (low 14 bits of this contract's address): BEFORE_SWAP | AFTER_SWAP.
-contract VolatilityFeeHook is BaseHook {
+contract VolatilityFeeHook is BaseHook, VolFeeModule {
     using PoolIdLibrary for PoolKey;
-    using StateLibrary for IPoolManager;
     using LPFeeLibrary for uint24;
 
-    /// @dev EWMA is kept with 4 extra decimal digits of precision (ticks * 1e4).
-    uint256 internal constant EWMA_SCALE = 1e4;
-    /// @dev 1 bp = 100 hundredths of a bip.
-    uint256 internal constant PIPS_PER_BP = 100;
-
-    ITape public immutable tape;
-
+    /// @notice Fee parameters. `symbol` and `operator` are the pool binding; `setConfig` ignores them.
     struct Config {
         bytes32 symbol;
         address operator;
@@ -47,10 +43,6 @@ contract VolatilityFeeHook is BaseHook {
         uint64 eventBumpSeconds;
     }
 
-    mapping(PoolId => Config) public configOf;
-    /// @notice EWMA of |tick move per swap|, scaled by 1e4.
-    mapping(PoolId => uint256) public ewmaOf;
-
     event Bound(PoolId indexed poolId, bytes32 symbol, address operator);
     event ConfigSet(PoolId indexed poolId, Config config);
     event FeeCharged(PoolId indexed poolId, uint24 fee);
@@ -60,9 +52,7 @@ contract VolatilityFeeHook is BaseHook {
     error NotDynamicFee();
     error BadConfig();
 
-    constructor(IPoolManager manager, ITape tape_) BaseHook(manager) {
-        tape = tape_;
-    }
+    constructor(IPoolManager manager, ITape tape_) BaseHook(manager) ModuleBase(tape_) {}
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
@@ -91,59 +81,53 @@ contract VolatilityFeeHook is BaseHook {
 
     // ------------------------------------------------------------------ operator
 
-    modifier onlyOperator(PoolId id) {
-        if (msg.sender != configOf[id].operator) revert NotOperator();
-        _;
-    }
-
     /// @notice Bind a dynamic-fee pool to a Tape symbol. First caller becomes the pool's operator.
     ///         Defaults: base 0.05%, max 1%, 10 pips per EWMA tick, window 8 swaps, +20 bps for 1 hour
     ///         either side of an action.
     function bind(PoolKey calldata key, bytes32 symbol) external {
         if (!key.fee.isDynamicFee()) revert NotDynamicFee();
         PoolId id = key.toId();
-        Config storage c = configOf[id];
-        if (c.operator != address(0)) revert AlreadyBound();
-        c.operator = msg.sender;
-        c.symbol = symbol;
-        c.baseFee = 500;
-        c.maxFee = 10_000;
-        c.feePerTick = 10;
-        c.window = 8;
-        c.eventBumpBps = 20;
-        c.eventBumpSeconds = 1 hours;
+        _bindPool(id, symbol);
+        _volFeeInit(id);
         emit Bound(id, symbol, msg.sender);
     }
 
     /// @notice Replace the fee parameters. Symbol and operator in `cfg` are ignored.
     function setConfig(PoolKey calldata key, Config calldata cfg) external onlyOperator(key.toId()) {
-        if (cfg.window == 0 || cfg.maxFee > LPFeeLibrary.MAX_LP_FEE || cfg.baseFee > cfg.maxFee) revert BadConfig();
-        Config storage c = configOf[key.toId()];
-        c.baseFee = cfg.baseFee;
-        c.maxFee = cfg.maxFee;
-        c.feePerTick = cfg.feePerTick;
-        c.window = cfg.window;
-        c.eventBumpBps = cfg.eventBumpBps;
-        c.eventBumpSeconds = cfg.eventBumpSeconds;
-        emit ConfigSet(key.toId(), c);
+        _volFeeSetConfig(
+            key.toId(),
+            VolFeeConfig({
+                symbol: cfg.symbol,
+                operator: cfg.operator,
+                baseFee: cfg.baseFee,
+                maxFee: cfg.maxFee,
+                feePerTick: cfg.feePerTick,
+                window: cfg.window,
+                eventBumpBps: cfg.eventBumpBps,
+                eventBumpSeconds: cfg.eventBumpSeconds
+            })
+        );
     }
 
     // ------------------------------------------------------------------ status
 
-    /// @notice The fee the next swap will pay, in hundredths of a bip (without the override flag).
-    ///         0 for an unbound pool, meaning "the pool's own fee".
-    function currentFee(PoolKey calldata key) external view returns (uint24) {
-        PoolId id = key.toId();
-        Config storage c = configOf[id];
-        if (c.operator == address(0)) return 0;
-        return _fee(id, c);
-    }
-
-    /// @notice True while the symbol's current Tape action is within `eventBumpSeconds` of now.
-    function inEventWindow(PoolKey calldata key) external view returns (bool) {
-        Config storage c = configOf[key.toId()];
-        if (c.operator == address(0)) return false;
-        return _inEventWindow(c);
+    /// @notice The pool's binding and fee parameters in one view.
+    function configOf(PoolId id)
+        external
+        view
+        returns (
+            bytes32 symbol,
+            address operator,
+            uint24 baseFee,
+            uint24 maxFee,
+            uint24 feePerTick,
+            uint32 window,
+            uint24 eventBumpBps,
+            uint64 eventBumpSeconds
+        )
+    {
+        VolFeeConfig memory c = _config(id);
+        return (c.symbol, c.operator, c.baseFee, c.maxFee, c.feePerTick, c.window, c.eventBumpBps, c.eventBumpSeconds);
     }
 
     // ------------------------------------------------------------------ hooks
@@ -154,14 +138,8 @@ contract VolatilityFeeHook is BaseHook {
         returns (bytes4, BeforeSwapDelta, uint24)
     {
         PoolId id = key.toId();
-        Config storage c = configOf[id];
-        if (c.operator == address(0)) return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
-
-        (, int24 tick,,) = poolManager.getSlot0(id);
-        _storeTick(id, tick);
-
-        uint24 fee = _fee(id, c);
-        emit FeeCharged(id, fee);
+        if (!_volFeeActive(id)) return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
+        uint24 fee = _volFeeBefore(id);
         return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, fee | LPFeeLibrary.OVERRIDE_FEE_FLAG);
     }
 
@@ -171,50 +149,7 @@ contract VolatilityFeeHook is BaseHook {
         returns (bytes4, int128)
     {
         PoolId id = key.toId();
-        Config storage c = configOf[id];
-        if (c.operator == address(0)) return (BaseHook.afterSwap.selector, 0);
-
-        (, int24 tickAfter,,) = poolManager.getSlot0(id);
-        int24 tickBefore = _loadTick(id);
-        uint256 move = uint256(uint24(tickAfter > tickBefore ? tickAfter - tickBefore : tickBefore - tickAfter));
-
-        uint256 w = c.window;
-        ewmaOf[id] = (ewmaOf[id] * (w - 1) + move * EWMA_SCALE) / w;
+        if (_volFeeActive(id)) _volFeeAfter(id);
         return (BaseHook.afterSwap.selector, 0);
-    }
-
-    // ------------------------------------------------------------------ internal
-
-    function _fee(PoolId id, Config storage c) internal view returns (uint24) {
-        uint256 fee = uint256(c.baseFee) + (uint256(c.feePerTick) * ewmaOf[id]) / EWMA_SCALE;
-        if (fee > c.maxFee) fee = c.maxFee;
-        if (_inEventWindow(c)) {
-            fee += uint256(c.eventBumpBps) * PIPS_PER_BP;
-            if (fee > LPFeeLibrary.MAX_LP_FEE) fee = LPFeeLibrary.MAX_LP_FEE;
-        }
-        return uint24(fee);
-    }
-
-    function _inEventWindow(Config storage c) internal view returns (bool) {
-        (ITape.Kind kind, uint64 effective,) = tape.action(c.symbol);
-        if (kind == ITape.Kind.None) return false;
-        uint256 now_ = block.timestamp;
-        uint256 dist = now_ > effective ? now_ - effective : effective - now_;
-        return dist <= c.eventBumpSeconds;
-    }
-
-    /// @dev Tick at the start of the current swap, kept in transient storage (lives for this tx only).
-    function _storeTick(PoolId id, int24 tick) internal {
-        bytes32 slot = PoolId.unwrap(id);
-        assembly ("memory-safe") {
-            tstore(slot, tick)
-        }
-    }
-
-    function _loadTick(PoolId id) internal view returns (int24 tick) {
-        bytes32 slot = PoolId.unwrap(id);
-        assembly ("memory-safe") {
-            tick := tload(slot)
-        }
     }
 }

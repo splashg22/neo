@@ -10,6 +10,8 @@ import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeS
 import {SwapParams, ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
 import {ITape} from "../interfaces/ITape.sol";
 import {IAllowlist} from "../interfaces/IAllowlist.sol";
+import {ModuleBase} from "../modules/ModuleBase.sol";
+import {GateModule} from "../modules/GateModule.sol";
 
 /// @title EligibilityGateHook — only allowlisted accounts may swap or add liquidity
 /// @notice A pool bound by its operator refuses swaps and new liquidity from accounts the pool's
@@ -23,21 +25,11 @@ import {IAllowlist} from "../interfaces/IAllowlist.sol";
 ///         trader themselves or pass none (in which case the EOA that signed the transaction is
 ///         checked). Pair it with a trusted router for anything stronger than a convenience gate.
 ///
+///         The gate logic lives in `GateModule`; this contract is the standalone hook around it.
+///
 ///         Permissions (low 14 bits of this contract's address): BEFORE_SWAP | BEFORE_ADD_LIQUIDITY.
-contract EligibilityGateHook is BaseHook {
+contract EligibilityGateHook is BaseHook, GateModule {
     using PoolIdLibrary for PoolKey;
-
-    ITape public immutable tape;
-
-    struct Config {
-        bytes32 symbol;
-        address operator;
-        IAllowlist allowlist;
-        bool gateSwaps;
-        bool gateLiquidity;
-    }
-
-    mapping(PoolId => Config) public configOf;
 
     event Bound(PoolId indexed poolId, bytes32 symbol, address operator);
     event AllowlistSet(PoolId indexed poolId, address allowlist);
@@ -47,9 +39,7 @@ contract EligibilityGateHook is BaseHook {
     error NotOperator();
     error AlreadyBound();
 
-    constructor(IPoolManager manager, ITape tape_) BaseHook(manager) {
-        tape = tape_;
-    }
+    constructor(IPoolManager manager, ITape tape_) BaseHook(manager) ModuleBase(tape_) {}
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
@@ -78,46 +68,25 @@ contract EligibilityGateHook is BaseHook {
 
     // ------------------------------------------------------------------ operator
 
-    modifier onlyOperator(PoolId id) {
-        if (msg.sender != configOf[id].operator) revert NotOperator();
-        _;
-    }
-
     /// @notice Bind a pool to a Tape symbol. First caller becomes the pool's operator. Both gates
     ///         start enabled; until the operator sets an allowlist nobody is eligible.
     function bind(PoolKey calldata key, bytes32 symbol) external {
         PoolId id = key.toId();
-        Config storage c = configOf[id];
-        if (c.operator != address(0)) revert AlreadyBound();
-        c.operator = msg.sender;
-        c.symbol = symbol;
-        c.gateSwaps = true;
-        c.gateLiquidity = true;
+        _bindPool(id, symbol);
+        _gateInit(id);
         emit Bound(id, symbol, msg.sender);
-    }
-
-    /// @notice Point the pool at a different allowlist.
-    function setAllowlist(PoolKey calldata key, IAllowlist allowlist) external onlyOperator(key.toId()) {
-        configOf[key.toId()].allowlist = allowlist;
-        emit AllowlistSet(key.toId(), address(allowlist));
-    }
-
-    /// @notice Choose which operations are gated.
-    function setGates(PoolKey calldata key, bool gateSwaps, bool gateLiquidity) external onlyOperator(key.toId()) {
-        Config storage c = configOf[key.toId()];
-        c.gateSwaps = gateSwaps;
-        c.gateLiquidity = gateLiquidity;
-        emit GatesSet(key.toId(), gateSwaps, gateLiquidity);
     }
 
     // ------------------------------------------------------------------ status
 
-    /// @notice Would `account` pass this pool's gate right now? Unbound pools and pools without an
-    ///         allowlist answer false only when a gate is on; an unbound pool answers true.
-    function isEligible(PoolKey calldata key, address account) external view returns (bool) {
-        Config storage c = configOf[key.toId()];
-        if (c.operator == address(0)) return true;
-        return _allowed(c, account);
+    /// @notice The pool's binding and gate configuration in one view.
+    function configOf(PoolId id)
+        external
+        view
+        returns (bytes32 symbol, address operator, IAllowlist allowlist, bool gateSwaps, bool gateLiquidity)
+    {
+        GateConfig storage c = gateConfigOf[id];
+        return (symbolOf[id], operatorOf[id], c.allowlist, c.gateSwaps, c.gateLiquidity);
     }
 
     // ------------------------------------------------------------------ hooks
@@ -128,8 +97,8 @@ contract EligibilityGateHook is BaseHook {
         override
         returns (bytes4, BeforeSwapDelta, uint24)
     {
-        Config storage c = configOf[key.toId()];
-        if (c.operator != address(0) && c.gateSwaps) _check(c, hookData);
+        PoolId id = key.toId();
+        if (_gateActive(id)) _gateSwapCheck(id, hookData);
         return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
 
@@ -139,26 +108,8 @@ contract EligibilityGateHook is BaseHook {
         override
         returns (bytes4)
     {
-        Config storage c = configOf[key.toId()];
-        if (c.operator != address(0) && c.gateLiquidity) _check(c, hookData);
+        PoolId id = key.toId();
+        if (_gateActive(id)) _gateLiquidityCheck(id, hookData);
         return BaseHook.beforeAddLiquidity.selector;
-    }
-
-    // ------------------------------------------------------------------ internal
-
-    /// @dev The account to check: hookData of exactly 20 bytes, otherwise tx.origin.
-    function _subject(bytes calldata hookData) internal view returns (address) {
-        if (hookData.length == 20) return address(bytes20(hookData));
-        return tx.origin;
-    }
-
-    function _allowed(Config storage c, address account) internal view returns (bool) {
-        if (address(c.allowlist) == address(0)) return false; // no list: nobody is eligible
-        return c.allowlist.isAllowed(account);
-    }
-
-    function _check(Config storage c, bytes calldata hookData) internal view {
-        address who = _subject(hookData);
-        if (!_allowed(c, who)) revert NotEligible(who);
     }
 }

@@ -26,6 +26,9 @@ NEO_CHAIN=46630 node mcp/server.mjs
 - `equity_tape(symbol?)` → finalized count, Merkle root, dispute window, attester
 - `hook_permissions(address)` → the 14 permission bits of any v4 hook
 
+## Composite hook
+`NeoHook` (address `neoHook` in the deployments file) runs any combination of halt, limit-up/limit-down, eligibility gate, volatility fee and dividend pass-through on one pool. `NeoHook.tradeStatus(PoolKey)` combines every enabled module; `tradeStatusFor(PoolKey, account)` adds the eligibility check for a specific trader. Prefer it over the single-module hooks when quoting a NeoHook pool.
+
 ## Direct reads (no MCP)
 - `Tape.isHalted(bytes32 symbol)`, `Tape.action(bytes32) → (kind, effective, value)`, `Tape.eventsOf(bytes32) → bytes32[]`, `Tape.pending(bytes32 id)`
 - `CorporateActionHook.tradeStatus(PoolKey) → (0 unknown | 1 ok | 2 refused, bytes32 reason, uint64 effective)`

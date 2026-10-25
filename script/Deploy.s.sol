@@ -8,8 +8,10 @@ import {HookMiner} from "v4-periphery/src/utils/HookMiner.sol";
 import {Tape} from "../src/Tape.sol";
 import {ITape} from "../src/interfaces/ITape.sol";
 import {CorporateActionHook} from "../src/CorporateActionHook.sol";
+import {NeoHook} from "../src/NeoHook.sol";
 
-/// @notice Deploys the Tape and CorporateActionHook against the chain's Uniswap v4 PoolManager.
+/// @notice Deploys the Tape, CorporateActionHook and NeoHook (the composite hook) against the chain's
+///         Uniswap v4 PoolManager.
 ///
 ///   forge script script/Deploy.s.sol --rpc-url $RPC_URL --broadcast
 ///
@@ -32,6 +34,7 @@ contract Deploy is Script {
     string symbol;
     Tape tape;
     CorporateActionHook hook;
+    NeoHook neoHook;
 
     function run() external {
         _env();
@@ -66,6 +69,11 @@ contract Deploy is Script {
             HookMiner.find(CREATE2_DEPLOYER, flags, type(CorporateActionHook).creationCode, ctorArgs);
         hook = new CorporateActionHook{salt: salt}(manager, ITape(address(tape)));
         require(address(hook) == expected, "hook address mismatch");
+
+        flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG);
+        (expected, salt) = HookMiner.find(CREATE2_DEPLOYER, flags, type(NeoHook).creationCode, ctorArgs);
+        neoHook = new NeoHook{salt: salt}(manager, ITape(address(tape)));
+        require(address(neoHook) == expected, "neoHook address mismatch");
     }
 
     function _write() internal {
@@ -74,6 +82,7 @@ contract Deploy is Script {
         vm.serializeAddress(j, "poolManager", address(manager));
         vm.serializeAddress(j, "tape", address(tape));
         vm.serializeAddress(j, "hook", address(hook));
+        vm.serializeAddress(j, "neoHook", address(neoHook));
         vm.serializeAddress(j, "reviewer", reviewer);
         vm.serializeAddress(j, "deployer", deployer);
         vm.serializeUint(j, "disputeWindow", window);
@@ -85,5 +94,6 @@ contract Deploy is Script {
         console.log("chain", block.chainid);
         console.log("Tape", address(tape));
         console.log("CorporateActionHook", address(hook));
+        console.log("NeoHook", address(neoHook));
     }
 }

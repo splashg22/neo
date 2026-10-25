@@ -16,11 +16,13 @@ import {HookMiner} from "v4-periphery/src/utils/HookMiner.sol";
 import {Tape} from "../src/Tape.sol";
 import {ITape} from "../src/interfaces/ITape.sol";
 import {CorporateActionHook} from "../src/CorporateActionHook.sol";
+import {NeoHook} from "../src/NeoHook.sol";
 import {MockERC20} from "../src/test/MockERC20.sol";
 
 /// @notice Stands up a complete local environment on Anvil:
-///         PoolManager, Tape, CorporateActionHook, a tokenized-stock mock (ALFA) and a quote mock (USDG),
-///         one hooked pool with liquidity, an attester for ALFA, and three posted events.
+///         PoolManager, Tape, CorporateActionHook, NeoHook (the composite hook, deployed but not bound
+///         to the sample pool), a tokenized-stock mock (ALFA) and a quote mock (USDG), one pool hooked
+///         to CorporateActionHook with liquidity, an attester for ALFA, and three posted events.
 ///         Writes app/deployments.local.json for the console.
 ///
 ///         anvil &  then  forge script script/DeployLocal.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
@@ -37,6 +39,7 @@ contract DeployLocal is Script {
     PoolSwapTest swapRouter;
     Tape tape;
     CorporateActionHook hook;
+    NeoHook neoHook;
     MockERC20 t0;
     MockERC20 t1;
     PoolKey key;
@@ -45,6 +48,7 @@ contract DeployLocal is Script {
         vm.startBroadcast(DEPLOYER_KEY);
         _core();
         _hook();
+        _neoHook();
         _pool();
         vm.stopBroadcast();
 
@@ -76,6 +80,14 @@ contract DeployLocal is Script {
             HookMiner.find(CREATE2_DEPLOYER, flags, type(CorporateActionHook).creationCode, ctorArgs);
         hook = new CorporateActionHook{salt: salt}(IPoolManager(address(manager)), ITape(address(tape)));
         require(address(hook) == expected, "hook address mismatch");
+    }
+
+    function _neoHook() internal {
+        uint160 flags = uint160(Hooks.BEFORE_SWAP_FLAG | Hooks.AFTER_SWAP_FLAG | Hooks.BEFORE_ADD_LIQUIDITY_FLAG);
+        bytes memory ctorArgs = abi.encode(IPoolManager(address(manager)), ITape(address(tape)));
+        (address expected, bytes32 salt) = HookMiner.find(CREATE2_DEPLOYER, flags, type(NeoHook).creationCode, ctorArgs);
+        neoHook = new NeoHook{salt: salt}(IPoolManager(address(manager)), ITape(address(tape)));
+        require(address(neoHook) == expected, "neoHook address mismatch");
     }
 
     function _pool() internal {
@@ -115,6 +127,7 @@ contract DeployLocal is Script {
         vm.serializeAddress(j, "swapRouter", address(swapRouter));
         vm.serializeAddress(j, "tape", address(tape));
         vm.serializeAddress(j, "hook", address(hook));
+        vm.serializeAddress(j, "neoHook", address(neoHook));
         vm.serializeAddress(j, "token0", address(t0));
         vm.serializeAddress(j, "token1", address(t1));
         vm.serializeAddress(j, "attester", vm.addr(ATTESTER_KEY));
@@ -125,5 +138,6 @@ contract DeployLocal is Script {
         console.log("PoolManager", address(manager));
         console.log("Tape", address(tape));
         console.log("CorporateActionHook", address(hook));
+        console.log("NeoHook", address(neoHook));
     }
 }

@@ -9,6 +9,8 @@ import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {SwapParams, ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
 import {ITape} from "./interfaces/ITape.sol";
+import {ModuleBase, TradeStatus as ModuleTradeStatus} from "./modules/ModuleBase.sol";
+import {HaltModule} from "./modules/HaltModule.sol";
 
 /// @title CorporateActionHook — the first NEO hook
 /// @notice A pool bound to a stock symbol refuses swaps and new liquidity while the Tape says the
@@ -16,16 +18,11 @@ import {ITape} from "./interfaces/ITape.sol";
 ///         operator acknowledges it (after re-pricing or migrating liquidity). Removing liquidity is
 ///         never blocked: LPs can always leave.
 ///
+///         The logic lives in `HaltModule`; this contract is the standalone hook around it.
+///
 ///         Permissions (low 14 bits of this contract's address): BEFORE_SWAP | BEFORE_ADD_LIQUIDITY.
-contract CorporateActionHook is BaseHook {
+contract CorporateActionHook is BaseHook, HaltModule {
     using PoolIdLibrary for PoolKey;
-
-    ITape public immutable tape;
-
-    mapping(PoolId => bytes32) public symbolOf;
-    mapping(PoolId => address) public operatorOf;
-    /// @dev hash of the (kind, effective, value) the operator last acknowledged for this pool
-    mapping(PoolId => bytes32) public acknowledged;
 
     /// @notice Tri-state answer to "can this pool trade right now?". Unknown is never Ok.
     enum TradeStatus {
@@ -42,9 +39,7 @@ contract CorporateActionHook is BaseHook {
     error NotOperator();
     error AlreadyBound();
 
-    constructor(IPoolManager manager, ITape tape_) BaseHook(manager) {
-        tape = tape_;
-    }
+    constructor(IPoolManager manager, ITape tape_) BaseHook(manager) ModuleBase(tape_) {}
 
     function getHookPermissions() public pure override returns (Hooks.Permissions memory) {
         return Hooks.Permissions({
@@ -76,20 +71,8 @@ contract CorporateActionHook is BaseHook {
     /// @notice Bind a pool to a Tape symbol. First caller becomes the pool's operator.
     function bind(PoolKey calldata key, bytes32 symbol) external {
         PoolId id = key.toId();
-        if (operatorOf[id] != address(0)) revert AlreadyBound();
-        operatorOf[id] = msg.sender;
-        symbolOf[id] = symbol;
+        _bindPool(id, symbol);
         emit Bound(id, symbol, msg.sender);
-    }
-
-    /// @notice Operator confirms the pool has been re-priced / migrated for the current action.
-    function acknowledge(PoolKey calldata key) external {
-        PoolId id = key.toId();
-        if (msg.sender != operatorOf[id]) revert NotOperator();
-        (ITape.Kind kind, uint64 effective, uint256 value) = tape.action(symbolOf[id]);
-        bytes32 h = keccak256(abi.encode(kind, effective, value));
-        acknowledged[id] = h;
-        emit Acknowledged(id, h);
     }
 
     // ------------------------------------------------------------------ status
@@ -106,15 +89,8 @@ contract CorporateActionHook is BaseHook {
         PoolId id = key.toId();
         bytes32 sym = symbolOf[id];
         if (sym == bytes32(0)) return (TradeStatus.Ok, "unbound", 0);
-        if (!tape.hasAttester(sym)) return (TradeStatus.Unknown, "no-attester", 0);
-        if (tape.isHalted(sym)) return (TradeStatus.Refused, "halted", 0);
-        (ITape.Kind kind, uint64 eff, uint256 value) = tape.action(sym);
-        if ((kind == ITape.Kind.Split || kind == ITape.Kind.Rename) && block.timestamp >= eff) {
-            if (acknowledged[id] != keccak256(abi.encode(kind, eff, value))) {
-                return (TradeStatus.Refused, "awaiting-ack", eff);
-            }
-        }
-        return (TradeStatus.Ok, "ok", 0);
+        (ModuleTradeStatus st, bytes32 r, uint64 eff) = _haltStatus(id, sym);
+        return (TradeStatus(uint8(st)), r, eff);
     }
 
     // ------------------------------------------------------------------ hooks
@@ -142,14 +118,7 @@ contract CorporateActionHook is BaseHook {
     // ------------------------------------------------------------------ internal
 
     function _check(PoolId id) internal view {
-        bytes32 sym = symbolOf[id];
-        if (sym == bytes32(0)) return; // unbound pool: hook is inert
-        if (tape.isHalted(sym)) revert Halted(sym);
-        (ITape.Kind kind, uint64 effective, uint256 value) = tape.action(sym);
-        if ((kind == ITape.Kind.Split || kind == ITape.Kind.Rename) && block.timestamp >= effective) {
-            if (acknowledged[id] != keccak256(abi.encode(kind, effective, value))) {
-                revert AwaitingAcknowledgement(sym, kind, effective);
-            }
-        }
+        if (!_haltActive(id)) return; // unbound pool: hook is inert
+        _haltCheck(id, symbolOf[id]);
     }
 }

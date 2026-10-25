@@ -3,7 +3,7 @@
 What exists, what is verified, and the decisions that stand between the repo and a live service on Robinhood Chain.
 
 ## Verified
-- 86 Foundry tests across Tape, CorporateActionHook, LimitUpLimitDown, EligibilityGate, VolatilityFee, DividendPassThrough, all against a live Uniswap v4 PoolManager.
+- 108 Foundry tests across Tape, NeoHook, CorporateActionHook, LimitUpLimitDown, EligibilityGate, VolatilityFee, DividendPassThrough, all against a live Uniswap v4 PoolManager.
 - Full lifecycle on a local chain: halt → refused swap → attested lift → challenge → uphold → swap → split → refused → acknowledge → swap.
 - Service layer on a local chain: operator finalizes within one tick of the window closing; API, SSE, HMAC webhooks, SDK, MCP all agree with chain state.
 - Console: 18 headless-Chromium checks, including "swap outcome matches the trade-status badge".
@@ -36,4 +36,4 @@ What exists, what is verified, and the decisions that stand between the repo and
 - Eligibility gate trusts 20-byte `hookData` or `tx.origin`; a forwarding router can name any address.
 - LULD checks the pre-swap price only.
 - Volatility fee requires a dynamic-fee pool.
-- One hook per pool: until the composite `NeoHook` lands, a pool picks one module.
+- `NeoHook` composes all five modules on one pool; the standalone hooks remain for pools that want exactly one.
