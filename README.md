@@ -71,6 +71,19 @@ Use a browser wallet pointed at `127.0.0.1:8545` (chain 31337), or pick a Dev si
 
 Uniswap v4 `PoolManager` is at `0x8366a39CC670B4001A1121B8F6A443A643e40951` on both. The console (`app/`) has a chain selector and loads `app/deployments.<chainId>.json`; a chain without that file shows the deploy command instead.
 
+## Service layer
+
+Hooks only run inside swaps and liquidity calls; the Tape only changes when someone sends a transaction. The service layer is what makes NEO run without anyone clicking.
+
+| Package | What it does |
+|---|---|
+| `operator/` | **Operator daemon.** Watches pending events and finalizes each one the moment its dispute window closes; optionally posts attester-signed events from a feed file. Simulates before sending, skips when gas is above a cap, never holds user funds. Records every run and heartbeats to the API. `NEO_CHAIN=46630 NEO_OPERATOR_KEY=0x… NEO_API_KEY=… node operator/operator.mjs`. Anyone can run one; the Tape's own rules are the policy. |
+| `api/` | **Indexer API** at `/v1`: `tape`, `events`, `symbols/:sym`, `symbols/:sym/actions`, `pools`, `pools/:id`, `POST trade-status`, `runs` (with 24h stats), `operators` (with liveness), `stream` (SSE), `POST webhooks` (HMAC-SHA256 signed, `x-neo-signature: t=…,v1=…`), and `POST tx/finalize|challenge|acknowledge` which return `{to,data,value}` for the user's wallet. Reads need no key, 300 req/min per IP; writes need `x-api-key`. Every answer carries `chainId`, `block`, `timestamp`, `indexedTo`. |
+| `sdk/` | **`@neo/sdk` and `neo` CLI** on viem: `tape()`, `symbol()`, `actions()`, `event()`, `tradeStatus()`, `pool()`, `Neo.decodePermissions()`, `tx.*` encoders and `typedData.event()` for attesters. Signs nothing. |
+| `mcp/` | **MCP server** for agents (below). |
+
+Console's **Control room** panel reads the API: runs and success rate over 24h, operators alive, indexed block, and a live SSE feed. Point it at another API with `?api=https://…/v1`.
+
 ## Agents and integrators
 
 - **MCP server** (`mcp/server.mjs`, stdio, read-only): `equity_halt_status`, `equity_actions`, `equity_trade_status`, `equity_tape`, `hook_permissions`. Every answer carries `chainId`, `block`, `timestamp`. `cd mcp && npm i && NEO_CHAIN=46630 node server.mjs`; `node test-client.mjs` exercises all tools against a local chain.

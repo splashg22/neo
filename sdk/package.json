@@ -1,0 +1,19 @@
+{
+  "name": "@neo/sdk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./index.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "bin": {
+    "neo": "./cli.mjs"
+  }
+}

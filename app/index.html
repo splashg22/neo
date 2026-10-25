@@ -161,6 +161,23 @@ table{width:100%;border-collapse:collapse;font-size:.84rem}th,td{text-align:left
     </section>
 
     <section class="card" style="grid-column:1/-1">
+      <header><h2>Control room</h2><span class="n" id="cr-src">—</span></header>
+      <div class="body">
+        <div class="row" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">
+          <div><div class="note">Runs · 24h</div><div id="cr-runs" style="font-size:1.6rem;letter-spacing:-.02em">—</div></div>
+          <div><div class="note">Success · 24h</div><div id="cr-ok" style="font-size:1.6rem;letter-spacing:-.02em">—</div></div>
+          <div><div class="note">Operators alive</div><div id="cr-ops" style="font-size:1.6rem;letter-spacing:-.02em">—</div></div>
+          <div><div class="note">Indexed to block</div><div id="cr-blk" style="font-size:1.6rem;letter-spacing:-.02em">—</div></div>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>When</th><th>Operator</th><th>Task</th><th>Symbol</th><th>Result</th><th>Tx</th></tr></thead>
+          <tbody id="cr-table"></tbody>
+        </table></div>
+        <div class="log" id="cr-live" style="max-height:120px"></div>
+      </div>
+    </section>
+
+    <section class="card" style="grid-column:1/-1">
       <header><h2>Activity</h2><span class="n">this session</span></header>
       <div class="body"><div class="log" id="log"></div></div>
     </section>
@@ -372,6 +389,20 @@ async function calendar(now, win){
 }
 
 await refresh(); setInterval(refresh, 4000);
+// ---------- control room (indexer API; optional)
+const API = params.get('api') || localStorage.getItem('neo-api') || 'http://127.0.0.1:8787/v1';
+async function controlRoom(){
+  try {
+    const [runs, ops, health] = await Promise.all([fetch(API+'/runs?limit=12').then(r=>r.json()), fetch(API+'/operators').then(r=>r.json()), fetch(API).then(r=>r.json())]);
+    $('cr-src').textContent = API+' · chain '+health.chainId;
+    $('cr-runs').textContent = runs.last24h.runs; $('cr-ok').textContent = runs.last24h.runs ? Math.round(100*runs.last24h.ok/runs.last24h.runs)+'%' : '—';
+    $('cr-ops').textContent = ops.items.filter(o=>o.alive).length+' / '+ops.items.length; $('cr-blk').textContent = health.indexedTo;
+    $('cr-table').innerHTML = runs.items.map(r => `<tr><td class="mono">${new Date(r.at).toLocaleTimeString()}</td><td class="mono">${short(r.operator)}${r.name?' · '+r.name:''}</td><td>${r.task}</td><td>${r.symbol||'—'}</td><td>${r.ok?'<span class="pill Finalized">ok</span>':'<span class="pill Challenged">failed</span>'}${r.ms?' <span class="note mono">'+r.ms+' ms</span>':''}</td><td class="mono">${r.tx?short(r.tx):(r.error||'')}</td></tr>`).join('') || '<tr><td colspan="6" class="note">No runs recorded yet.</td></tr>';
+  } catch { $('cr-src').textContent = 'indexer API not reachable at '+API; }
+}
+try { const es = new EventSource(API+'/stream'); ['event.posted','event.challenged','event.finalized','event.rejected','pool.bound','pool.acknowledged','run'].forEach(t => es.addEventListener(t, ev => { const m=JSON.parse(ev.data); const d=document.createElement('div'); d.textContent=new Date(m.at).toLocaleTimeString()+'  '+t+'  '+(m.data.symbol||m.data.task||''); $('cr-live').prepend(d); refresh(); })); } catch {}
+controlRoom(); setInterval(controlRoom, 5000);
+
 log('Console ready · Tape '+short(D.tape)+' · Hook '+short(D.hook));
 </script>
 </body>

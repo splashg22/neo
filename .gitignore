@@ -6,3 +6,7 @@ broadcast/
 .http.log
 app/deployments.local.json
 docs/testnet-deployer-address.txt
+api/data/
+.api.log
+.receiver.log
+.operator.log
